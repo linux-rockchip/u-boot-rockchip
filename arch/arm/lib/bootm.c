@@ -20,7 +20,6 @@
 #include <libfdt.h>
 #include <fdt_support.h>
 #include <asm/bootm.h>
-#include <asm/io.h>
 #include <linux/compiler.h>
 
 #if defined(CONFIG_ARMV7_NONSEC) || defined(CONFIG_ARMV7_VIRT)
@@ -39,6 +38,7 @@ static ulong get_sp(void)
 	return ret;
 }
 
+#ifdef CONFIG_LMB
 void arch_lmb_reserve(struct lmb *lmb)
 {
 	ulong sp;
@@ -60,6 +60,7 @@ void arch_lmb_reserve(struct lmb *lmb)
 	lmb_reserve(lmb, sp,
 		    gd->bd->bi_dram[0].start + gd->bd->bi_dram[0].size - sp);
 }
+#endif //CONFIG_LMB
 
 /**
  * announce_and_cleanup() - Print message and prepare for kernel boot
@@ -249,7 +250,6 @@ static void boot_prep_linux(bootm_headers_t *images)
 /* Subcommand: GO */
 static void boot_jump_linux(bootm_headers_t *images, int flag)
 {
-	
 #ifdef CONFIG_ARM64
 	void (*kernel_entry)(void *fdt_addr);
 	int fake = (flag & BOOTM_STATE_OS_FAKE_GO);

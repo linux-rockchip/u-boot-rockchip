@@ -10,11 +10,15 @@ ifndef CONFIG_SPL_BUILD
 obj-y += main.o
 obj-y += command.o
 obj-y += exports.o
+ifndef CONFIG_ROCKCHIP
 obj-y += hash.o
+endif
 obj-$(CONFIG_SYS_HUSH_PARSER) += hush.o
+ifndef CONFIG_ROCKCHIP
 obj-y += s_record.o
 obj-y += xyzModem.o
 obj-y += cmd_disk.o
+endif
 
 # boards
 obj-$(CONFIG_SYS_GENERIC_BOARD) += board_f.o
@@ -23,7 +27,9 @@ obj-$(CONFIG_SYS_GENERIC_BOARD) += board_r.o
 # core command
 obj-y += cmd_boot.o
 obj-$(CONFIG_CMD_BOOTM) += cmd_bootm.o
+ifndef CONFIG_ROCKCHIP
 obj-y += cmd_help.o
+endif
 obj-y += cmd_version.o
 
 # environment
@@ -106,7 +112,9 @@ obj-$(CONFIG_CMD_CRAMFS) += cmd_cramfs.o
 obj-$(CONFIG_CMD_LDRINFO) += cmd_ldrinfo.o
 obj-$(CONFIG_CMD_LED) += cmd_led.o
 obj-$(CONFIG_CMD_LICENSE) += cmd_license.o
+ifndef CONFIG_ROCKCHIP
 obj-y += cmd_load.o
+endif
 obj-$(CONFIG_LOGBUFFER) += cmd_log.o
 obj-$(CONFIG_ID_EEPROM) += cmd_mac.o
 obj-$(CONFIG_CMD_MD5SUM) += cmd_md5sum.o
@@ -134,7 +142,9 @@ ifdef CONFIG_PCI
 obj-$(CONFIG_CMD_PCI) += cmd_pci.o
 endif
 
+ifndef CONFIG_ROCKCHIP
 obj-y += cmd_pcmcia.o
+endif
 obj-$(CONFIG_CMD_PORTIO) += cmd_portio.o
 obj-$(CONFIG_CMD_PXE) += cmd_pxe.o
 obj-$(CONFIG_CMD_READ) += cmd_read.o
@@ -175,17 +185,16 @@ obj-$(CONFIG_CMD_ZFS) += cmd_zfs.o
 
 obj-$(CONFIG_CMD_FASTBOOT) += cmd_fastboot.o
 
-obj-$(CONFIG_RESOURCE_PARTITION) += resource.o
 ifdef CONFIG_CMD_FASTBOOT
-ifdef CONFIG_RESOURCE_PARTITION
 obj-$(CONFIG_CMD_CHARGE_ANIM) += cmd_charge.o
-endif
 endif
 
 # others
 obj-$(CONFIG_BOOTSTAGE) += bootstage.o
 obj-$(CONFIG_CONSOLE_MUX) += iomux.o
+ifndef CONFIG_ROCKCHIP
 obj-y += flash.o
+endif
 obj-$(CONFIG_CMD_KGDB) += kgdb.o kgdb_stubs.o
 obj-$(CONFIG_I2C_EDID) += edid.o
 obj-$(CONFIG_KALLSYMS) += kallsyms.o
@@ -234,7 +243,9 @@ obj-$(CONFIG_HWCONFIG) += hwconfig.o
 obj-$(CONFIG_BOUNCE_BUFFER) += bouncebuf.o
 obj-y += console.o
 obj-y += dlmalloc.o
+ifndef CONFIG_ROCKCHIP
 obj-y += image.o
+endif
 obj-$(CONFIG_OF_LIBFDT) += image-fdt.o
 obj-$(CONFIG_FIT) += image-fit.o
 obj-$(CONFIG_FIT_SIGNATURE) += image-sig.o

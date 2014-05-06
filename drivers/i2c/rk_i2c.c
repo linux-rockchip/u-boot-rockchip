@@ -12,7 +12,7 @@ Revision:       1.00
 #include <i2c.h>
 #include <asm/io.h>
 #include <asm/sizes.h>
-#include <asm/arch/drivers.h>
+#include <asm/arch/rk30_drivers.h>
 #include <asm/arch/rk_i2c.h>
 
 #define i2c_writel		writel
@@ -99,12 +99,7 @@ struct rk30_i2c {
 
 #ifdef CONFIG_I2C_MULTI_BUS
  struct rk30_i2c rki2c_base[I2C_BUS_MAX] = {
- #if (CONFIG_RKCHIPTYPE == CONFIG_RK3288)
- 	{ .regs = I2C0_BASE_ADDR, 0},
-	{ .regs = I2C1_BASE_ADDR, 0},
-	{ .regs = I2C2_BASE_ADDR, 0},
-	{ .regs = I2C3_BASE_ADDR, 0},
- #elif (CONFIG_RKCHIPTYPE == CONFIG_RK3026)
+ #if (CONFIG_RKCHIPTYPE == CONFIG_RK3026)
  	{ .regs = I2C0_BASE_ADDR + SZ_8K, 0 },
 	{ .regs = I2C1_BASE_ADDR + SZ_8K, 0 },
 	{ .regs = I2C2_BASE_ADDR + SZ_8K, 0 },
@@ -114,7 +109,7 @@ struct rk30_i2c {
 	{ .regs = I2C1_BASE_ADDR + SZ_4K, 0 },
 	{ .regs = I2C2_BASE_ADDR + SZ_8K, 0 },
 	{ .regs = I2C3_BASE_ADDR + SZ_8K, 0 },
-	{ .regs = I2C4_BASE_ADDR + SZ_8K, 0 }
+	{ .regs = I2C4_BASE + SZ_8K, 0 }
 	#endif
 };
 
@@ -124,12 +119,12 @@ static unsigned int gcurrent_bus = I2C_BUS_MAX;
 static void *get_base(void)
 {
 	if (gcurrent_bus >= I2C_BUS_MAX) {
-		printf("I2C bus error! gcurrent_bus = %d\n", gcurrent_bus);
+		printf("I2C bus error!");
 		return (void *)NULL;
 	}
 
 	if (rki2c_base[gcurrent_bus].regs == 0) {
-		printf("I2C base register error!\n");
+		printf("I2C base register error!");
 		return (void *)NULL;	
 	}
 
@@ -390,7 +385,7 @@ static void rk_i2c_init(int speed)
 		return ;
 	}
 
-	printf("rk_i2c_init: I2C bus = %d\n", gcurrent_bus);
+	//printf("rk_i2c_init: I2C bus = %d\n", gcurrent_bus);
 #if 1
 	if (gcurrent_bus == I2C_BUS_CH0) {
 		i2c_adap_sel(I2C_BUS_CH0);
@@ -400,9 +395,6 @@ static void rk_i2c_init(int speed)
 		g_grfReg->GRF_GPIO_IOMUX[1].GPIOD_IOMUX = (((0x1<<2)|(0x1<<0))<<16)|(0x1<<2)|(0x1<<0);
 #elif(CONFIG_RKCHIPTYPE == CONFIG_RK3026)
 		g_grfReg->GRF_GPIO_IOMUX[0].GPIOA_IOMUX = (((0x1<<2)|(0x1<<0))<<16)|(0x1<<2)|(0x1<<0);
-#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3288)
-        *(int*)(PMU_BASE_ADDR+0x0088) |= 1<<14;
-        *(int*)(PMU_BASE_ADDR+0x008c) |= 1;
 #endif
 	} else if (gcurrent_bus == I2C_BUS_CH1) {
 		i2c_adap_sel(I2C_BUS_CH1);
@@ -443,7 +435,6 @@ static void rk_i2c_init(int speed)
 #endif
 	rk_i2c_set_clk(i2c, speed);
 }
-
 
 #ifdef CONFIG_I2C_MULTI_BUS
 unsigned int i2c_get_bus_num(void)

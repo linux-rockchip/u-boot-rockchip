@@ -50,8 +50,10 @@
 /************************************************************************/
 /* ** FONT DATA								*/
 /************************************************************************/
+#ifdef CONFIG_LCD_FONT
 #include <video_font.h>		/* Get font data, width and height	*/
 #include <video_font_data.h>
+#endif //CONFIG_LCD_FONT
 
 /************************************************************************/
 /* ** LOGO DATA								*/
@@ -76,6 +78,7 @@
 /************************************************************************/
 /* ** CONSOLE DEFINITIONS & FUNCTIONS					*/
 /************************************************************************/
+#ifdef CONFIG_LCD_FONT
 #if defined(CONFIG_LCD_LOGO) && !defined(CONFIG_LCD_INFO_BELOW_LOGO)
 # define CONSOLE_ROWS		((panel_info.vl_row-BMP_LOGO_HEIGHT) \
 					/ VIDEO_FONT_HEIGHT)
@@ -91,6 +94,7 @@
 					- CONSOLE_ROW_SIZE)
 #define CONSOLE_SIZE		(CONSOLE_ROW_SIZE * CONSOLE_ROWS)
 #define CONSOLE_SCROLL_SIZE	(CONSOLE_SIZE - CONSOLE_ROW_SIZE)
+#endif //CONFIG_LCD_FONT
 
 #if LCD_BPP == LCD_MONOCHROME
 # define COLOR_MASK(c)		((c)	  | (c) << 1 | (c) << 2 | (c) << 3 | \
@@ -154,6 +158,7 @@ void lcd_set_flush_dcache(int flush)
 	lcd_flush_dcache = (flush != 0);
 }
 
+#ifdef CONFIG_LCD_FONT
 /*----------------------------------------------------------------------*/
 
 static void console_scrollup(void)
@@ -210,7 +215,6 @@ void lcd_putc(const char c)
 
 		return;
 	}
-
 	switch (c) {
 	case '\r':
 		console_col = 0;
@@ -347,6 +351,7 @@ static inline void lcd_putc_xy(ushort x, ushort y, uchar c)
 {
 	lcd_drawchars(x, y, &c, 1);
 }
+#endif //CONFIG_LCD_FONT
 
 /************************************************************************/
 /**  Small utility to check that you got the colours right		*/
@@ -422,8 +427,11 @@ int drv_lcd_init(void)
 	strcpy(lcddev.name, "lcd");
 	lcddev.ext   = 0;			/* No extensions */
 	lcddev.flags = DEV_FLAGS_OUTPUT;	/* Output only */
+
+#ifdef CONFIG_LCD_FONT
 	lcddev.putc  = lcd_putc;		/* 'putc' function */
 	lcddev.puts  = lcd_puts;		/* 'puts' function */
+#endif //CONFIG_LCD_FONT
 
 	rc = stdio_register(&lcddev);
 
@@ -548,9 +556,9 @@ ulong lcd_setmem(ulong addr)
 		panel_info.vl_row, NBITS(panel_info.vl_bpix));
 
 	size = lcd_get_size(&line_length);
-//#ifdef CONFIG_ROCKCHIP
-//    size <<= 1;//double fb buffer.
-//#endif
+#ifdef CONFIG_ROCKCHIP
+    size <<= 1;//double fb buffer.
+#endif
 
 	/* Round up to nearest full page, or MMU section if defined */
 	size = ALIGN(size, CONFIG_LCD_ALIGNMENT);
@@ -616,86 +624,7 @@ static inline ushort *configuration_get_cmap(void)
 #endif
 }
 
-#if defined(CONFIG_RK_FB)
-#include <resource.h>
-int rk_bitmap_from_resource(unsigned short* fb) 
-{
-    int ret=0;
-    char *cmap, *cdata, *data;
-    u8 n_colors;
-    int data_offset = 0, xact=0, yact=0, i=0, j=0, d=0; 
-    const char* file_path = "logo.bmp";
-    resource_content content;
-    struct fb_dsp_info fb_info;
-    snprintf(content.path, sizeof(content.path), "%s", file_path);
-    content.load_addr = 0;
-    if(!get_content(&content)) {
-        printf("can't get_content\n");
-        return -1;
-    }
-    if(!load_content(&content)) {
-        printf("can't load_content\n");
-        ret=-1;
-        goto end;
-    } 
-    data = (char*)content.load_addr;   
-
-	if (data[0] == 'B' && data[1] == 'M')
-    {
-        data_offset = data[10] | data[11]<<8 | data[12]<<16 | data[13]<<24;
-    	xact = data[18] | (data[19]<<8) | (data[20]<<16) | (data[21]<<24);
-        yact = data[22] | (data[23]<<8) | (data[24]<<16) | (data[25]<<24);
-        n_colors = (data[29]<<8)|data[28];
-    	cmap = &data[54];
-        cdata = &data[data_offset];
-        //printf("%s data_offset=%d, xact=%d, yact=%d, n_colors=%d\n",__func__,data_offset,xact,yact,n_colors);
-        if(n_colors==8){
-            for(i=yact-1; i>=0; i--)
-            {
-                for(j=0; j< xact; j++)
-                {
-                    d = *cdata++;
-                    *(fb+i*xact+j) = ((cmap[4*d+2]&0xf8)<<8)|((cmap[4*d+1]&0xfc)<<3)|((cmap[4*d]&0xf8)>>3); 
-                }
-            }
-        }else if(n_colors==24){
-            u8 r,g,b;
-            for(i=yact-1; i>=0; i--)
-            {
-                for(j=0; j< xact; j++)
-                {
-                    r=*cdata++;
-                    g=*cdata++;
-                    b=*cdata++;
-                    *(fb+i*xact+j) =((r&0xf8)>>3)|((g&0xfc)<<3)|((b&0xf8)<<8); 
-                }
-            }            
-        }
-        else ret = -1;
-    }else{
-        printf("%s is not real bmp file\n",content.path);
-        ret=-1;
-        goto end;
-    }
-    fb_info.xpos = (panel_info.vl_col - xact)/2;
-	fb_info.ypos = (panel_info.vl_row - yact)/2;
-	fb_info.xact = xact;
-	fb_info.yact = yact;
-	fb_info.xsize = fb_info.xact;
-	fb_info.ysize = fb_info.yact;
-	fb_info.xvir = fb_info.xact;
-	fb_info.layer_id = WIN0;
-	fb_info.format = RGB565;
-	fb_info.yaddr = lcd_base;
-	lcd_pandispaly(&fb_info);
-end:
-    free_content(&content);  
-    return ret;
-}
-#endif
-
-#if defined(CONFIG_LCD_LOGO)
-
+#ifdef CONFIG_LCD_LOGO
 void bitmap_plot(int x, int y)
 {
 #ifdef CONFIG_ATMEL_LCD
@@ -713,16 +642,13 @@ void bitmap_plot(int x, int y)
 #endif
 	unsigned bpix = NBITS(panel_info.vl_bpix);
 
-    
 	debug("Logo: width %d  height %d  colors %d  cmap %d\n",
 		BMP_LOGO_WIDTH, BMP_LOGO_HEIGHT, BMP_LOGO_COLORS,
 		ARRAY_SIZE(bmp_logo_palette));
 
 	bmap = &bmp_logo_bitmap[0];
 #ifdef CONFIG_RK_FB
-	fb = (uchar *)(lcd_base);
-    if(!rk_bitmap_from_resource((unsigned short*)fb))
-        return;
+	fb   = (uchar *)(lcd_base);
 #else
 	fb   = (uchar *)(lcd_base + y * lcd_line_length + x * bpix / 8);
 #endif
@@ -1318,8 +1244,10 @@ U_BOOT_ENV_CALLBACK(splashimage, on_splashimage);
 
 void lcd_position_cursor(unsigned col, unsigned row)
 {
+#ifdef CONFIG_LCD_FONT
 	console_col = min(col, CONSOLE_COLS - 1);
 	console_row = min(row, CONSOLE_ROWS - 1);
+#endif //CONFIG_LCD_FONT
 }
 
 int lcd_get_pixel_width(void)
@@ -1334,12 +1262,20 @@ int lcd_get_pixel_height(void)
 
 int lcd_get_screen_rows(void)
 {
+#ifdef CONFIG_LCD_FONT
 	return CONSOLE_ROWS;
+#else
+    return 0;
+#endif
 }
 
 int lcd_get_screen_columns(void)
 {
+#ifdef CONFIG_LCD_FONT
 	return CONSOLE_COLS;
+#else
+    return 0;
+#endif
 }
 
 #if defined(CONFIG_LCD_DT_SIMPLEFB)

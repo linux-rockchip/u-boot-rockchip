@@ -72,6 +72,7 @@ int get_env_id(void)
 	return env_id;
 }
 
+#ifndef CONFIG_ROCKCHIP
 #ifndef CONFIG_SPL_BUILD
 /*
  * Command interface: print one or all environment variables
@@ -201,6 +202,7 @@ DONE:
 }
 #endif
 #endif /* CONFIG_SPL_BUILD */
+#endif //CONFIG_ROCKCHIP
 
 /*
  * Set a new environment variable,
@@ -1102,7 +1104,9 @@ static cmd_tbl_t cmd_env_sub[] = {
 #if defined(CONFIG_CMD_IMPORTENV)
 	U_BOOT_CMD_MKENT(import, 5, 0, do_env_import, "", ""),
 #endif
+#ifndef CONFIG_ROCKCHIP
 	U_BOOT_CMD_MKENT(print, CONFIG_SYS_MAXARGS, 1, do_env_print, "", ""),
+#endif
 #if defined(CONFIG_CMD_RUN)
 	U_BOOT_CMD_MKENT(run, CONFIG_SYS_MAXARGS, 1, do_run, "", ""),
 #endif
@@ -1203,6 +1207,7 @@ U_BOOT_CMD_COMPLETE(
 );
 #endif
 
+#ifndef CONFIG_ROCKCHIP
 U_BOOT_CMD_COMPLETE(
 	printenv, CONFIG_SYS_MAXARGS, 1,	do_env_print,
 	"print environment variables",
@@ -1211,6 +1216,7 @@ U_BOOT_CMD_COMPLETE(
 	"    - print value of environment variable 'name'",
 	var_complete
 );
+#endif
 
 #ifdef CONFIG_CMD_GREPENV
 U_BOOT_CMD_COMPLETE(

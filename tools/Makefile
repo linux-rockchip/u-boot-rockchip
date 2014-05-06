@@ -40,6 +40,8 @@ define convert-logo
     $(shell convert $(1) -colors 256 -compress none $(2))
 endef
 
+include $(TOPDIR)/tools/logos/charge/charge.mk
+
 #
 # toolchains targeting win32 generate .exe files
 #
@@ -71,6 +73,7 @@ ENVCRC-$(CONFIG_ENV_IS_IN_SPI_FLASH) = y
 CONFIG_BUILD_ENVCRC ?= $(ENVCRC-y)
 
 # Generated executable files
+BIN_FILES-$(CONFIG_CMD_CHARGE_ANIM) += bmp_image$(SFX)
 BIN_FILES-$(CONFIG_LCD_LOGO) += bmp_logo$(SFX)
 BIN_FILES-$(CONFIG_VIDEO_LOGO) += bmp_logo$(SFX)
 BIN_FILES-$(CONFIG_BUILD_ENVCRC) += envcrc$(SFX)
@@ -104,6 +107,7 @@ EXT_OBJ_FILES-y += lib/sha1.o
 EXT_OBJ_FILES-y += lib/sha.o
 
 # Source files located in the tools directory
+OBJ_FILES-$(CONFIG_CMD_CHARGE_ANIM) += bmp_image.o
 OBJ_FILES-$(CONFIG_LCD_LOGO) += bmp_logo.o
 OBJ_FILES-$(CONFIG_VIDEO_LOGO) += bmp_logo.o
 NOPED_OBJ_FILES-y += aisimage.o
@@ -168,7 +172,7 @@ LOGO-$(CONFIG_VIDEO_LOGO) += $(LOGO_DATA_H)
 
 # Generic logo
 ifeq ($(LOGO_BMP),)
-LOGO_BMP= logos/rockchip.bmp
+LOGO_BMP= logos/denx.bmp
 
 # Use board logo and fallback to vendor
 ifneq ($(wildcard logos/$(BOARD).bmp),)

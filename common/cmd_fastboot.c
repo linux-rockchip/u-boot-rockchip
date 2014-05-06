@@ -64,9 +64,6 @@
 #include <fastboot.h>
 #include <usbdevice.h>
 #include <asm/sizes.h>
-#ifdef CONFIG_RESOURCE_PARTITION
-#include <resource.h>
-#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -1661,8 +1658,8 @@ static int __def_fbt_key_pressed(void)
 {
 	return FASTBOOT_REBOOT_NONE;
 }
-static void __def_board_fbt_finalize_bootargs(char* args, int buf_sz,
-       int ramdisk_sz, int recovery)
+static void __def_board_fbt_finalize_bootargs(char* args, size_t buf_sz,
+       size_t ramdisk_sz, int recovery)
 {
 	return;
 }
@@ -1708,9 +1705,9 @@ enum fbt_reboot_type board_fbt_get_reboot_type(void)
 	__attribute__((weak, alias("__def_fbt_get_reboot_type")));
 int board_fbt_key_pressed(void)
 	__attribute__((weak, alias("__def_fbt_key_pressed")));
-void board_fbt_finalize_bootargs(char* args, int buf_sz,
-        int ramdisk_addr, int ramdisk_sz, int recovery)
-    __attribute__((weak, alias("__def_board_fbt_finalize_bootargs")));
+void board_fbt_finalize_bootargs(char* args, size_t buf_sz,
+        size_t ramdisk_sz, int recovery)
+	__attribute__((weak, alias("__def_board_fbt_finalize_bootargs")));
 int board_fbt_handle_flash(char *name,
                struct cmd_fastboot_interface *priv)
     __attribute__((weak, alias("__def_board_fbt_handle_flash")));
@@ -1863,10 +1860,6 @@ int do_booti(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			   FASTBOOT_BOOT_MAGIC_SIZE)) {
 #ifdef CONFIG_ROCKCHIP
             memset(hdr, 0, blksz);
-            if (fixHdr(hdr) < 0) {
-                goto fail;
-            }
-            snprintf(hdr->magic, FASTBOOT_BOOT_MAGIC_SIZE, "%s\n", "RKIMAGE!");
             if (loadRkImage(hdr, ptn, fastboot_find_ptn(KERNEL_NAME)) != 0) {
                 FBTERR("booti: bad boot or kernel image\n");
                 goto fail;
@@ -1923,6 +1916,12 @@ int do_booti(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
         /* set this aside somewhere safe */
         memcpy(hdr, (void *) addr, sizeof(*hdr));
 
+#ifdef CONFIG_ROCKCHIP
+        if (fixHdr(hdr) < 0) {
+            goto fail;
+        }
+#endif
+
         if (memcmp(hdr->magic, FASTBOOT_BOOT_MAGIC,
                FASTBOOT_BOOT_MAGIC_SIZE)) {
             printf("booti: bad boot image magic\n");
@@ -1932,10 +1931,8 @@ int do_booti(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
         kaddr = (void *)(addr + hdr->page_size);
         raddr = (void *)(kaddr + ALIGN(hdr->kernel_size,
                            hdr->page_size));
-        hdr->ramdisk_addr = raddr;
-        hdr->kernel_addr = kaddr;
-        //memmove((void *)hdr->kernel_addr, kaddr, hdr->kernel_size);
-        //memmove((void *)hdr->ramdisk_addr, raddr, hdr->ramdisk_size);
+        memmove((void *)hdr->kernel_addr, kaddr, hdr->kernel_size);
+        memmove((void *)hdr->ramdisk_addr, raddr, hdr->ramdisk_size);
     }
 
     if (board_fbt_boot_check(hdr, priv.unlocked)) {
@@ -1963,14 +1960,13 @@ int do_booti(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		 * version too.
 		 */
         board_fbt_finalize_bootargs(command_line, sizeof(command_line),
-                hdr->ramdisk_addr, hdr->ramdisk_size,
-                !strcmp(boot_source, RECOVERY_NAME));
+                hdr->ramdisk_size, !strcmp(boot_source, RECOVERY_NAME));
         //printf("board cmdline:\n%s\n", command_line);
 		amt = snprintf(command_line,
 				sizeof(command_line),
-				"%s androidboot.bootloader=%s",
+				"%s androidboot.bootloader=%s fb.addr=0x%08lx",
 				command_line,
-				CONFIG_FASTBOOT_VERSION_BOOTLOADER);
+				CONFIG_FASTBOOT_VERSION_BOOTLOADER, gd->fb_base);
         
 #if 0
 		for (i = 0; i < priv.num_device_info; i++) {
@@ -2006,19 +2002,8 @@ int do_booti(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	memset(&images, 0, sizeof(images));
 	images.ep = hdr->kernel_addr;
 	images.rd_start = hdr->ramdisk_addr;
-	images.rd_end = hdr->ramdisk_addr
-        + (hdr->ramdisk_size + 0x3FFFF)&0xFFFF0000;//64KB ¶ÔÆë
+	images.rd_end = hdr->ramdisk_addr + hdr->ramdisk_size;
 	free(hdr);
- 
-#ifdef CONFIG_CMD_BOOTM
-#ifdef CONFIG_ROCKCHIP
-    if (rk_bootm_start(&images)/*it returns 1 when failed.*/) {
-	    puts("booti: failed to boot!\nreboot to bootloader...\n");
-        fbt_handle_reboot("reboot-bootloader");
-    }
-#endif
-#endif
-
 	puts("booti: do_bootm_linux...\n");
 	do_bootm_linux(0, 0, NULL, &images);
 
@@ -2095,12 +2080,7 @@ void fbt_preboot(void)
     }
 
 #ifdef CONFIG_ROCKCHIP
-    const void *blob = rk_fdt_resource_load();
-    int node = fdt_path_offset(blob, "/fb");
-    int logo_on= fdtdec_get_int(blob, node, "uboot,logo-on", 0);
-    printf("read logo_on switch from dts [%d]\n", logo_on);
 #ifdef CONFIG_LCD
-    if(logo_on)
     drv_lcd_init();   //move backlight enable to board_init_r, for don't show logo in rockusb                                         
 #endif
 #ifdef CONFIG_RK616
@@ -2108,7 +2088,6 @@ void fbt_preboot(void)
 #endif
 
 #endif// CONFIG_ROCKCHIP
-#ifdef CONFIG_UBOOT_CHARGE
     //check charge mode when no key pressed.
     if(check_charge() || frt == FASTBOOT_REBOOT_CHARGE) {
 #ifdef CONFIG_CMD_CHARGE_ANIM
@@ -2121,17 +2100,12 @@ void fbt_preboot(void)
         return fbt_run_charge();
 #endif
     }
-#endif //CONFIG_UBOOT_CHARGE
 #ifdef CONFIG_ROCKCHIP
-    powerOn();
+PowerHoldPinInit();
 #ifdef CONFIG_LCD
-    if(logo_on)
-    {
-        lcd_enable_logo(true);
-        rk_backlight_ctrl(48);
-    }
+    lcd_enable_logo(true);
+    rk_backlight_ctrl(48);
 #endif
-    rkclk_soft_reset();
 #endif// CONFIG_ROCKCHIP
 
 	if (frt == FASTBOOT_REBOOT_RECOVERY) {

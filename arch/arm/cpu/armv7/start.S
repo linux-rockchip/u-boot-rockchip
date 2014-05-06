@@ -147,22 +147,12 @@ reset:
 	orr	r0, r0, #0xc0		@ disable FIQ and IRQ
 	msr	cpsr,r0
 
-
 #ifdef CONFIG_ROCKCHIP
-#if (CONFIG_RKCHIPTYPE == CONFIG_RK3288)
-        ldr 	r1, =0xFF730000             /* cpu 1 2 3 power down */
-#else
         ldr 	r1, =0x20004000             /* cpu 1 2 3 power down */
-#endif
         mov 	r0, #0x0E
         str	r0, [r1,#8]
 #endif
 
-#if (CONFIG_RKCHIPTYPE == CONFIG_RK3288)
-	LDR R0,=0xff740000
-	LDR R1,=0x08000000
-	STR R1,[R0]
-#else
 #ifdef CONFIG_USE_RK30IRQ
 	/*;chip detect RK30 or RK3066B
 	;set remap bit in grf enabled, remap 0x0000 to imem, 
@@ -191,7 +181,6 @@ reset:
 	bne 1b
 #endif
 #endif
-#endif /* CONFIG_RKCHIPTYPE */
 
 /*
  * Setup vector:
@@ -271,18 +260,6 @@ ENTRY(cpu_init_cp15)
 	mcr	p15, 0, r0, c7, c5, 6	@ invalidate BP array
 	mcr     p15, 0, r0, c7, c10, 4	@ DSB
 	mcr     p15, 0, r0, c7, c5, 4	@ ISB
-
-	/*
-	 * Invalidate L2 Latency
-	 */
-#if (CONFIG_RKCHIPTYPE == CONFIG_RK3288)
-	mrc	p15, 1, r0, c9, c0, 2	@ Read L2 Control Register
-	bic	r0, r0, #0x000000FF	@ clear bit 17:0
-	bic	r0, r0, #0x0000FF00	@ clear bit 17:0
-	bic	r0, r0, #0x00030000	@ clear bit 17:0
-	orr	r0, r0, #0x00000008	@ set bit 3
-	mcr	p15, 1, r0, c9, c0, 2	@ config L2 Control Register
-#endif
 
 	/*
 	 * disable MMU stuff and caches

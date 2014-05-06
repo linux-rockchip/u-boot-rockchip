@@ -21,7 +21,7 @@
  * IRQ Stack: 00ebff7c
  * FIQ Stack: 00ebef7c
  */
-//#define DEBUG
+#define DEBUG
 
 #include <common.h>
 #include <command.h>
@@ -145,7 +145,7 @@ static int display_dram_config(void)
 	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++)
 		size += gd->bd->bi_dram[i].size;
 
-	puts("DRAM:\t\t");
+	puts("DRAM:  ");
 	print_size(size, "\n");
 #endif
 
@@ -298,7 +298,7 @@ void board_init_f(ulong bootflag)
 		}
 	}
 
-#if defined(CONFIG_OF_CONTROL) && !defined(CONFIG_ROCKCHIP)
+#ifdef CONFIG_OF_CONTROL
 	/* For now, put this check after the console is ready */
 	if (fdtdec_prepare_fdt()) {
 		panic("** CONFIG_OF_CONTROL defined but no FDT - please see "
@@ -476,7 +476,7 @@ void board_init_f(ulong bootflag)
 #endif
 
 	debug("New Stack Pointer is: %08lx\n", addr_sp);
-    debug("total reserving memory(except stack) is :%dm\n", ((CONFIG_SYS_SDRAM_BASE + gd->ram_size - addr_sp) >> 20) + 1);
+    printf("total reserving memory(except stack) is :%dm\n", ((CONFIG_SYS_SDRAM_BASE + gd->ram_size - addr_sp) >> 20) + 1);
 
 #ifdef CONFIG_POST
 	post_bootmode_init();
@@ -681,8 +681,11 @@ void board_init_r(gd_t *id, ulong dest_addr)
 	misc_init_r();
 #endif
 
+	
+#ifndef CONFIG_ROCKCHIP
 	/* Initialize from environment */
 	load_addr = getenv_ulong("loadaddr", 16, load_addr);
+#endif
 
 #ifdef CONFIG_BOARD_LATE_INIT
 	board_late_init();

@@ -266,20 +266,6 @@ int fdt_chosen(void *fdt, int force)
 	str = getenv("bootargs");
 	if (str != NULL) {
 		path = fdt_getprop(fdt, nodeoffset, "bootargs", NULL);
-
-#ifndef CONFIG_FDT_REPLACE_CMDLINE
-        if (path != NULL) {
-            char buf[1024*64];//cmdline should not over it
-            snprintf(buf, sizeof(buf), "%s %s", str, path);
-
-			err = fdt_setprop(fdt, nodeoffset,
-				"bootargs", buf, strlen(buf)+1);
-			if (err < 0)
-				printf("WARNING: could not set bootargs %s.\n",
-					fdt_strerror(err));
-        } else
-#endif
-
 		if ((path == NULL) || force) {
 			err = fdt_setprop(fdt, nodeoffset,
 				"bootargs", str, strlen(str)+1);
@@ -297,7 +283,6 @@ int fdt_chosen(void *fdt, int force)
 
 #ifdef OF_STDOUT_PATH
 	path = fdt_getprop(fdt, nodeoffset, "linux,stdout-path", NULL);
-	printf("------->path=%s\n",path);
 	if ((path == NULL) || force) {
 		err = fdt_setprop(fdt, nodeoffset,
 			"linux,stdout-path", OF_STDOUT_PATH, strlen(OF_STDOUT_PATH)+1);
