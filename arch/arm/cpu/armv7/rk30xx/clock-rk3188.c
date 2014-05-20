@@ -505,7 +505,6 @@ static void rkclk_cpu_coreclk_set(uint32 pll_src, uint32 core_div, uint32 periph
 	uint32_t pll_sel = 0, c_div = 0, p_div = 0, ac_div;
 
 	/* cpu clock source select: 0: arm pll, 1: general pll */
-	pll_src &= 0x01;
 	if(pll_src == 0) {
 		pll_sel = CORE_SEL_APLL;
 	} else {
@@ -513,11 +512,9 @@ static void rkclk_cpu_coreclk_set(uint32 pll_src, uint32 core_div, uint32 periph
 	}
 
 	/* cpu core - clk_core = core_clk_src / n */
-	core_div &= 0x1f;
 	c_div = core_div - 1;
 
 	/* cpu core periph - clk_core:clk_core_periph */
-	periph_div &= 0x03;
 	switch (periph_div)
 	{
 		case CLK_DIV_2:
@@ -543,7 +540,6 @@ static void rkclk_cpu_coreclk_set(uint32 pll_src, uint32 core_div, uint32 periph
 
 
 	/* axi core clk - clk_core:aclk_core */
-	axi_core_div &= CORE_ACLK_MSK;
 	switch (axi_core_div)
 	{
 		case CLK_DIV_1:
@@ -576,12 +572,10 @@ static void rkclk_cpu_ahpclk_set(uint32 aclk_div, uint32 hclk_div, uint32 pclk_d
 	uint32_t a_div = 0, h_div = 0, p_div = 0, apb_div = 0;
 
 	/* cpu aclk - aclk_cpu = core_clk_src / n */
-	aclk_div &= 0x1f;
 	a_div = aclk_div - 1;
 	g_cruReg->CRU_CLKSEL_CON[0] = (CPU_CLK_DIV_W_MSK | (CPU_CLK_DIV_MSK & a_div));
 
 	/* cpu hclk - aclk_cpu:hclk_cpu */
-	hclk_div &= 0x03;
 	switch (hclk_div)
 	{
 		case CLK_DIV_1:
@@ -598,7 +592,6 @@ static void rkclk_cpu_ahpclk_set(uint32 aclk_div, uint32 hclk_div, uint32 pclk_d
 	}
 
 	/* cpu pclk - aclk_cpu:pclk_cpu */
-	pclk_div &= 0x07;
 	switch (pclk_div)
 	{
 		case CLK_DIV_1:
@@ -619,7 +612,6 @@ static void rkclk_cpu_ahpclk_set(uint32 aclk_div, uint32 hclk_div, uint32 pclk_d
 	}
 
 	/* cpu ahb2apb clk - hclk_cpu:pclken_ahb2apb */
-	ahb2apb_div &= 0x03;
 	switch (ahb2apb_div)
 	{
 		case CLK_DIV_1:
@@ -650,7 +642,6 @@ static void rkclk_ddr_clk_set(uint32 pll_src, uint32 ddr_div)
 	uint32_t pll_sel = 0, div = 0;
 
 	/* cpu clock source select: 0: ddr pll, 1: general pll */
-	pll_src &= 0x01;
 	if(pll_src == 0) {
 		pll_sel = 0;
 	} else {
@@ -658,7 +649,6 @@ static void rkclk_ddr_clk_set(uint32 pll_src, uint32 ddr_div)
 	}
 
 	/* ddrphy clk - clk_ddr_src:clk_ddrphy */
-	ddr_div &= 0x03;
 	switch (ddr_div)
 	{
 		case CLK_DIV_1:

@@ -393,7 +393,6 @@ static void rkclk_periph_ahpclk_set(uint32 pll_src, uint32 aclk_div, uint32 hclk
 	uint32 pll_sel = 0, a_div = 0, h_div = 0, p_div = 0;
 
 	/* periph clock source select: 0: general pll, 1: codec pll */
-	pll_src &= 0x01;
 	if(pll_src == 0) {
 		pll_sel = 0;
 	} else {
@@ -401,7 +400,6 @@ static void rkclk_periph_ahpclk_set(uint32 pll_src, uint32 aclk_div, uint32 hclk
 	}
 
 	/* periph aclk - aclk_periph = periph_clk_src / n */
-	aclk_div &= PERI_ACLK_DIV_MASK;
 	if(aclk_div == 0) {
 		a_div = 1;
 	} else {
@@ -409,7 +407,6 @@ static void rkclk_periph_ahpclk_set(uint32 pll_src, uint32 aclk_div, uint32 hclk
 	}
 
 	/* periph hclk - aclk_periph:hclk_periph */
-	hclk_div &= PERI_HCLK_DIV_MASK;
 	switch (hclk_div)
 	{
 		case CLK_DIV_1:
@@ -427,7 +424,6 @@ static void rkclk_periph_ahpclk_set(uint32 pll_src, uint32 aclk_div, uint32 hclk
 	}
 
 	/* periph pclk - aclk_periph:pclk_periph */
-	pclk_div &= PERI_PCLK_DIV_MASK;
 	switch (pclk_div)
 	{
 		case CLK_DIV_1:
@@ -463,7 +459,6 @@ static void rkclk_cpu_coreclk_set(uint32 pll_src, uint32 core_div, uint32 periph
 	uint32_t pll_sel = 0, c_div = 0, p_div = 0;
 
 	/* cpu clock source select: 0: arm pll, 1: general pll */
-	pll_src &= 0x01;
 	if(pll_src == 0) {
 		pll_sel = CORE_SEL_APLL;
 	} else {
@@ -471,11 +466,9 @@ static void rkclk_cpu_coreclk_set(uint32 pll_src, uint32 core_div, uint32 periph
 	}
 
 	/* cpu core - clk_core = core_clk_src / n */
-	core_div &= 0x1f;
 	c_div = core_div - 1;
 
 	/* cpu core periph - clk_core:clk_core_periph */
-	periph_div &= 0x03;
 	switch (periph_div)
 	{
 		case CLK_DIV_2:
@@ -510,7 +503,6 @@ static void rkclk_cpu_ahpclk_set(uint32 aclk_div, uint32 hclk_div, uint32 pclk_d
 	uint32_t a_div = 0, h_div = 0, p_div = 0, apb_div = 0;
 
 	/* cpu aclk - clk_core:aclk_cpu */
-	aclk_div &= 0x07;
 	switch (aclk_div)
 	{
 		case CLK_DIV_1:
@@ -534,7 +526,6 @@ static void rkclk_cpu_ahpclk_set(uint32 aclk_div, uint32 hclk_div, uint32 pclk_d
 	}
 
 	/* cpu hclk - aclk_cpu:hclk_cpu */
-	hclk_div &= 0x03;
 	switch (hclk_div)
 	{
 		case CLK_DIV_1:
@@ -551,7 +542,6 @@ static void rkclk_cpu_ahpclk_set(uint32 aclk_div, uint32 hclk_div, uint32 pclk_d
 	}
 
 	/* cpu pclk - aclk_cpu:pclk_cpu */
-	pclk_div &= 0x07;
 	switch (pclk_div)
 	{
 		case CLK_DIV_1:
@@ -572,7 +562,6 @@ static void rkclk_cpu_ahpclk_set(uint32 aclk_div, uint32 hclk_div, uint32 pclk_d
 	}
 
 	/* cpu ahb2apb clk - hclk_cpu:pclken_ahb2apb */
-	ahb2apb_div &= 0x03;
 	switch (ahb2apb_div)
 	{
 		case CLK_DIV_1:
@@ -604,7 +593,6 @@ static void rkclk_ddr_clk_set(uint32 pll_src, uint32 ddr_div)
 	uint32_t pll_sel = 0, div = 0;
 
 	/* cpu clock source select: 0: ddr pll, 1: general pll */
-	pll_src &= 0x01;
 	if(pll_src == 0) {
 		pll_sel = 0;
 	} else {
@@ -612,7 +600,6 @@ static void rkclk_ddr_clk_set(uint32 pll_src, uint32 ddr_div)
 	}
 
 	/* ddrphy clk - clk_ddr_src:clk_ddrphy */
-	ddr_div &= 0x03;
 	switch (ddr_div)
 	{
 		case CLK_DIV_1:
