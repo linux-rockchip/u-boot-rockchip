@@ -18,7 +18,7 @@ Revision:       1.00
 #define CONFIG_ARMV7		1	/* This is an ARM V7 CPU core */
 #define CONFIG_ROCKCHIP		1	/* in a ROCKCHIP core */
 
-#define SECOND_LEVEL_BOOTLOADER
+#define CONFIG_SECOND_LEVEL_BOOTLOADER
 
 #define HAVE_VENDOR_COMMON_LIB y
 
@@ -53,7 +53,7 @@ Revision:       1.00
 #define CONFIG_BAUDRATE			115200
 
 //define uboot loader addr.
-#ifdef SECOND_LEVEL_BOOTLOADER
+#ifdef CONFIG_SECOND_LEVEL_BOOTLOADER
 //2m offset for packed nand bin.
 #define CONFIG_SYS_TEXT_BASE    0x60200000
 #define RK_FLASH_BOOT_EN
