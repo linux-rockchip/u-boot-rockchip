@@ -68,12 +68,20 @@ void DRVDelayS(uint32 count)
 //系统启动失败标志
 uint32 IReadLoaderFlag(void)
 {
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3288)
 	return readl(RKIO_PMU_PHYS + PMU_SYS_REG0);
+#else
+	#error "PLS check CONFIG_RKCHIPTYPE for loader flag."
+#endif
 }
 
 void ISetLoaderFlag(uint32 flag)
 {
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3288)
 	writel(flag, RKIO_PMU_PHYS + PMU_SYS_REG0);
+#else
+	#error "PLS check CONFIG_RKCHIPTYPE for loader flag."
+#endif
 }
 
 void FW_NandDeInit(void)
@@ -87,9 +95,9 @@ void FW_NandDeInit(void)
 }
 
 
-void rkplat_uart2UsbEn(uint32 en)
-{
 #if (CONFIG_RKCHIPTYPE == CONFIG_RK3288)
+static void rk3288_uart2usb(uint32 en)
+{
 	if (en) {
 		grf_writel((0x0000 | (0x00C0 << 16)), GRF_UOC0_CON3); // usbphy0 bypass disable and otg enable.
 
@@ -110,6 +118,14 @@ void rkplat_uart2UsbEn(uint32 en)
 		grf_writel((0x0000 | (0x00C0 << 16)), GRF_UOC0_CON3); // usb uart disable
 		grf_writel((0x0000 | (0x0004 << 16)), GRF_UOC0_CON2); // software control usb phy disable
 	}
+}
+#endif
+
+
+void rkplat_uart2UsbEn(uint32 en)
+{
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3288)
+	rk3288_uart2usb(en);
 #else
 	#error "PLS check CONFIG_RKCHIPTYPE if support uart2usb."
 #endif /* CONFIG_RKPLATFORM */
