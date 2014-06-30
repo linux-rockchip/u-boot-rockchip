@@ -274,9 +274,15 @@ void SecureBootLockLoader(void)
 }
 
 
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3288)
+	#define RKIO_NANDC_BASE		RKIO_NANDC0_PHYS
+#else
+	#error "PLS config platform for nandc base!"
+#endif
+
 static void FlashSramLoadStore(void *pBuf, uint32 offset, uint32 dir, uint32 length)
 {
-	uint8 *pSramAddr = (uint8 *)(RKIO_NANDC0_PHYS + 0x1000);
+	uint8 *pSramAddr = (uint8 *)(RKIO_NANDC_BASE + 0x1000);
 
 	if (dir == 0)
 	{

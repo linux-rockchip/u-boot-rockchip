@@ -34,11 +34,17 @@ DECLARE_GLOBAL_DATA_PTR;
 void rk_module_deinit(void)
 {
 #ifdef CONFIG_RK_I2C
+
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3288)
 	// soft reset i2c0 - i2c5
 	writel(0x3f<<10 | 0x3f<<(10+16), RKIO_CRU_PHYS + CRU_SOFTRSTS_CON(2));
 	mdelay(1);
 	writel(0x00<<10 | 0x3f<<(10+16), RKIO_CRU_PHYS + CRU_SOFTRSTS_CON(2));
+#else
+	#error "PLS config platform for i2c reset!"
 #endif
+
+#endif /* CONFIG_RK_I2C */
 }
 
 

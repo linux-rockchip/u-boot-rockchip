@@ -35,8 +35,9 @@
 #define write_XDATA32(address, value)	(*((uint32 volatile*)(address)) = value)
 
 int gpio_reg[]={
-	RKIO_GPIO0_PHYS, 
-	RKIO_GPIO1_PHYS, 
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3288)
+	RKIO_GPIO0_PHYS,
+	RKIO_GPIO1_PHYS,
 	RKIO_GPIO2_PHYS,
 	RKIO_GPIO3_PHYS,
 	RKIO_GPIO4_PHYS,
@@ -44,6 +45,9 @@ int gpio_reg[]={
 	RKIO_GPIO6_PHYS,
 	RKIO_GPIO7_PHYS,
 	RKIO_GPIO8_PHYS
+#else
+	#error "PLS check CONFIG_RKCHIPTYPE for key."
+#endif
 };
 
 extern void DRVDelayUs(uint32 us);
@@ -102,6 +106,7 @@ int GetPortState(key_config *key)
 			return state;
 		}
 	}
+
 	return 0;
 }
 
@@ -113,6 +118,7 @@ int checkKey(uint32* boot_rockusb, uint32* boot_recovery, uint32* boot_fastboot)
 	*boot_fastboot = 0;
 
 	printf("checkKey\n");
+
 	if(GetPortState(&key_rockusb))
 	{
 		*boot_rockusb = 1;
