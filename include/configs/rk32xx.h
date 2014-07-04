@@ -39,7 +39,7 @@
 
 
 /* for rk common fold */
-#define HAVE_VENDOR_COMMON_LIB y
+#define HAVE_VENDOR_COMMON_LIB	y
 
 
 /* Display CPU and Board Info */
@@ -143,9 +143,7 @@
 #define CONFIG_CMD_MMC
 #define CONFIG_CMD_READ
 
-
-#define CONFIG_LMB
-#define CONFIG_SYS_BOOT_RAMDISK_HIGH
+/* dts support */
 #define CONFIG_OF_LIBFDT
 
 
@@ -204,7 +202,7 @@
 #if (CONFIG_RKCHIPTYPE == CONFIG_RK3288)
 	#include "rkplat/rk32plat.h"
 #else
-	#error: PLS config chip for rk plat!
+	#error: "PLS config chip for rk plat!"
 #endif
 
 
