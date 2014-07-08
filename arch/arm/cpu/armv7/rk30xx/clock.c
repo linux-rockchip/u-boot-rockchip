@@ -141,5 +141,13 @@ void set_lcdc_dclk(int clk)
     g_cruReg->CRU_CLKSEL_CON[27] = (1<<16) | (0xff<<24) | (div<<8) | ((div==div1)?1:0);     //lcdc0_dclk
     g_cruReg->CRU_CLKSEL_CON[20] = (1<<16) | (0xff<<24) | (div<<8) | ((div==div1)?1:0);     //lcdc1_dclk
 }
+#if(CONFIG_RKCHIPTYPE == CONFIG_RK3026)
+uint32 GetMmcCLK(void)
+{
+	uint32 ArmPll;
+	ArmPll = CONFIG_RKCLK_GPLL_FREQ*1000;
+	return (ArmPll );
+}
+#endif
 
 

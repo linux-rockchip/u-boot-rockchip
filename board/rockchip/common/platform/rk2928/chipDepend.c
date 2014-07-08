@@ -343,15 +343,7 @@ uint32 GetAHBCLK(void)
     return AhbClk*1000;
 }
 
-uint32 GetMmcCLK(void)
-{
-    uint32 ArmPll;
-    if (ChipType == CONFIG_RK2928 || ChipType == CONFIG_RK3026)
-    	ArmPll = GetPLLCLK(3)  * 1000;
-	else
-        ArmPll = GetAHBCLK();
-    return (ArmPll );
-}
+
 
 void uart2UsbEn(uint8 en)
 {    

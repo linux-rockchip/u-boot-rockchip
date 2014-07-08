@@ -259,7 +259,7 @@ static int32 _ChangeFreq(SDMMC_PORT_E nSDCPort, uint32 freqKHz)
     if(freqKHz < 12000) //低频下, 外面供给的clk就不能太高,不然cmd和数据的hold time不够
     {
         suitMmcClkDiv = ahbFreq/freqKHz;
-        suitMmcClkDiv &= 0xFE;//偶数分频
+        suitMmcClkDiv &= 0xFFE;//偶数分频
     }
     
     if(suitMmcClkDiv > 0x3e)
