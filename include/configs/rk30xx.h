@@ -18,7 +18,7 @@ Revision:       1.00
 #define CONFIG_ARMV7		1	/* This is an ARM V7 CPU core */
 #define CONFIG_ROCKCHIP		1	/* in a ROCKCHIP core */
 
-#define CONFIG_SECOND_LEVEL_BOOTLOADER
+//#define CONFIG_SECOND_LEVEL_BOOTLOADER
 
 #define HAVE_VENDOR_COMMON_LIB y
 
@@ -191,7 +191,9 @@ Revision:       1.00
 #endif //CONFIG_CMD_FASTBOOT
 
 /* PL330 DMA */
+#if (CONFIG_RKCHIPTYPE != CONFIG_RK3026)
 #define CONFIG_PL330_DMA //enable pl330 dma
+#endif
 
 #ifdef CONFIG_PL330_DMA   
 #define SDMMC_USE_DMA  //for emmc use dma trans
