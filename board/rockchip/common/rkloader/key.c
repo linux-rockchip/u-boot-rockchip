@@ -178,7 +178,7 @@ void PowerKeyInit(void)
 	//power_hold_gpio.name
 	key_power.type = KEY_INT;
 	key_power.key.ioint.name = "power_key";
-	key_power.key.ioint.gpio = (GPIO_BANK0 | GPIO_A5);
+	key_power.key.ioint.gpio = ((GPIO_BANK0 << RK_GPIO_BANK_OFFSET)| GPIO_A5);
 	key_power.key.ioint.flags = IRQ_TYPE_EDGE_FALLING;
 	key_power.key.ioint.pressed_state = 0;
 	key_power.key.ioint.press_time = 0;
@@ -198,7 +198,7 @@ void key_init(void)
 {
 	charge_state_gpio.name = "charge_state";
 	charge_state_gpio.flags = 0;
-	charge_state_gpio.gpio = (GPIO_BANK0 | GPIO_B0);
+	charge_state_gpio.gpio = ((GPIO_BANK0 << RK_GPIO_BANK_OFFSET) | GPIO_B0);
 	gpio_direction_input(charge_state_gpio.gpio);
 
 	//power_hold_gpio.name
