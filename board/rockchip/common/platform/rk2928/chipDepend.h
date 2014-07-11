@@ -8,7 +8,7 @@
 #define RK2928L_CHIP_TAG 0x2
 #define RK2926_CHIP_TAG  0x0
 extern uint8    ChipType;
-typedef volatile unsigned int       REG32;
+
 #define RKLD_APB_FREQ           (50*1000) //LOADER µÄ APBÆµÂÊ£¬ khz 
 #define APB0_TIMER_BASE         TIMER0_BASE_ADDR
 #define RKLD_HWTM1_CON          ((REG32*)(APB0_TIMER_BASE+0X0008)) //config ¼Ä´æÆ÷ 
