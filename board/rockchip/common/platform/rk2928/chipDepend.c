@@ -431,7 +431,8 @@ void sdmmcGpioInit(uint32 ChipSel)
             g_grfReg->GRF_GPIO_IOMUX[2].GPIOA_IOMUX = (((0x3uL<<14)|(0x3<<10))<<16) 
                                                       |(0x2uL<<14)|(0x2<<10);             // emmc_clk,pwren
             g_grfReg->GRF_GPIO_PULL[1].GPIOH = 0xFF000000;                                // pull up d0~d7
-        }
+       	    g_grfReg->GRF_SOC_CON[0] = g_grfReg->GRF_SOC_CON[0] |0x10001000;
+	 }
     }
 #ifdef RK_SDCARD_BOOT_EN
     else if(ChipSel == 0)
