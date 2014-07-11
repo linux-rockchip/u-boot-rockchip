@@ -106,16 +106,17 @@ void ChipTypeCheck(void)
 #include "../../common/rockusb/USB20.h"
 void ModifyUsbVidPid(USB_DEVICE_DESCRIPTOR * pDeviceDescr)
 {
-	if(ChipType == CONFIG_RK3026)
+	#if (CONFIG_RKCHIPTYPE == CONFIG_RK3026)
 	{
 		pDeviceDescr->idProduct = 0x292c;
 		pDeviceDescr->idVendor  = 0x2207;
 	}
-	else if (ChipType == CONFIG_RK2928)
+	#else
 	{
 		pDeviceDescr->idProduct = 0x292A;
 		pDeviceDescr->idVendor  = 0x2207;
 	}
+	#endif
 }
 
 //定义Loader启动异常类型
@@ -124,14 +125,11 @@ void ModifyUsbVidPid(USB_DEVICE_DESCRIPTOR * pDeviceDescr)
 uint32 IReadLoaderFlag(void)
 {
     uint32 reg;
-    if (ChipType == CONFIG_RK2928)
-    {
+   #if (CONFIG_RKCHIPTYPE == CONFIG_RK2928)
         reg = ((*LOADER_FLAG_REG_L) & 0xFFFFuL) | (((*LOADER_FLAG_REG_H) & 0xFFFFuL)<<16);
-    }
-    else
-    {
+    #else
         reg = ((*LOADER_FLAG_REG_L));
-    }
+    #endif
 
     return (reg);
 	
@@ -140,20 +138,17 @@ uint32 IReadLoaderFlag(void)
 void ISetLoaderFlag(uint32 flag)
 {
     uint32 reg;
-    if (ChipType == CONFIG_RK2928)
-    {
+     #if (CONFIG_RKCHIPTYPE == CONFIG_RK2928)
         reg = ((*LOADER_FLAG_REG_L) & 0xFFFFuL) | (((*LOADER_FLAG_REG_H) & 0xFFFFuL)<<16);
         if(reg == flag)
             return;
         (*LOADER_FLAG_REG_L) = 0xFFFF0000 | (flag & 0xFFFFuL);
         (*LOADER_FLAG_REG_H) = 0xFFFF0000 | ((flag >>16) & 0xFFFFuL);
-    }
-    else
-    {
+    #else
         if(*LOADER_FLAG_REG_L == flag)
             return;
         *LOADER_FLAG_REG_L = flag;
-    }
+   #endif
 }
 uint32 IReadLoaderMode(void)
 {
@@ -424,25 +419,28 @@ void sdmmcGpioInit(uint32 ChipSel)
 {
     if(ChipSel == 2)
     {
-        if (ChipType == CONFIG_RK2928 || ChipType == CONFIG_RK3026)
+       #if (CONFIG_RKCHIPTYPE == CONFIG_RK3026) || (CONFIG_RKCHIPTYPE == CONFIG_RK2928)
         {
             g_grfReg->GRF_GPIO_IOMUX[1].GPIOC_IOMUX = ((0xFuL<<12)<<16)|(0xA<<12);        // emmc rstn,cmd
             g_grfReg->GRF_GPIO_IOMUX[1].GPIOD_IOMUX = (0xFFFFuL<<16)|0xAAAA;              // emmc d0-d7
             g_grfReg->GRF_GPIO_IOMUX[2].GPIOA_IOMUX = (((0x3uL<<14)|(0x3<<10))<<16) 
                                                       |(0x2uL<<14)|(0x2<<10);             // emmc_clk,pwren
-            g_grfReg->GRF_GPIO_PULL[1].GPIOH = 0xFF000000;                                // pull up d0~d7
-       	    g_grfReg->GRF_SOC_CON[0] = g_grfReg->GRF_SOC_CON[0] |0x10001000;
-	 }
+           // g_grfReg->GRF_GPIO_PULL[1].GPIOH = 0xFF000000;                                // pull up d0~d7
+        }
+	
+	g_grfReg->GRF_SOC_CON[0] = g_grfReg->GRF_SOC_CON[0] |0x10001000;
+	 #endif
     }
 #ifdef RK_SDCARD_BOOT_EN
     else if(ChipSel == 0)
     {
-        if (ChipType == CONFIG_RK2928 || ChipType == CONFIG_RK3026)
+        #if (CONFIG_RKCHIPTYPE == CONFIG_RK3026) || (CONFIG_RKCHIPTYPE == CONFIG_RK2928)
         {
             g_grfReg->GRF_GPIO_IOMUX[1].GPIOB_IOMUX = (((0x1<<14)|(0x1<<12))<<16)|(0x1<<14)|(0x1<<12);  // mmc0_cmd mmc0_pwren
             g_grfReg->GRF_GPIO_IOMUX[1].GPIOC_IOMUX = (((0x1<<10)|(0x1<<8)|(0x1<<6)|(0x1<<4)|(0x1<<0))<<16)
                                                     |(0x1<<10)|(0x1<<8)|(0x1<<6)|(0x1<<4)|(0x1<<0); //mmc0_clkout d0-d3
         }
+	#endif
     }
 #endif    
 }
@@ -565,10 +563,10 @@ void SDCReset(uint32 sdmmcId)
 {
 #ifndef FPGA_EMU 
     uint32 data = g_cruReg->CRU_SOFTRST_CON[5];
-    data = ((1<<16)|(1))<<(sdmmcId + 1);
+    data = ((1 << (16 + sdmmcId +1))|(1))<<(sdmmcId + 1);
     g_cruReg->CRU_SOFTRST_CON[5] = data;
     DRVDelayUs(100);
-    data = ((1<<16)|(0))<<(sdmmcId + 1);
+    data = ((1<<(16 + sdmmcId +1))|(0))<<(sdmmcId + 1);
     g_cruReg->CRU_SOFTRST_CON[5] = data;
     DRVDelayUs(200);
     EmmcPowerEn(1);
