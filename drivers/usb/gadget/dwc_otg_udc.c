@@ -153,7 +153,7 @@ static void dwc_otg_epn_tx(struct usb_endpoint_instance *endpoint);
 /**************************************************************************
 读取端点数据
 ***************************************************************************/
-void ReadEndpoint0(uint16_t len, void *buf)
+static void ReadEndpoint0(uint16_t len, void *buf)
 {
 	pUSB_OTG_REG OtgReg = (pUSB_OTG_REG)RKIO_USBOTG_BASE;
 
@@ -167,7 +167,7 @@ void ReadEndpoint0(uint16_t len, void *buf)
 /**************************************************************************
 写端点
 ***************************************************************************/
-void WriteEndpoint0(uint16_t len, void* buf)
+static void WriteEndpoint0(uint16_t len, void* buf)
 {
 	pUSB_OTG_REG OtgReg = (pUSB_OTG_REG)RKIO_USBOTG_BASE;
 
@@ -182,7 +182,7 @@ void WriteEndpoint0(uint16_t len, void* buf)
 /**************************************************************************
 读取端点数据
 ***************************************************************************/
-void ReadBulkEndpoint(uint32_t len, void *buf)
+static void ReadBulkEndpoint(uint32_t len, void *buf)
 {
 	pUSB_OTG_REG OtgReg = (pUSB_OTG_REG)RKIO_USBOTG_BASE;
 	uint32_t regBak;
@@ -200,7 +200,7 @@ void ReadBulkEndpoint(uint32_t len, void *buf)
 /**************************************************************************
 写端点
 ***************************************************************************/
-void WriteBulkEndpoint(uint32_t len, void* buf)
+static void WriteBulkEndpoint(uint32_t len, void* buf)
 {
 	pUSB_OTG_REG OtgReg = (pUSB_OTG_REG)RKIO_USBOTG_BASE;
 	uint32_t regBak;
@@ -316,7 +316,7 @@ static void udc_state_transition(usb_device_state_t initial,
         }
 }
 
-void ControlInPacket(void)
+static void ControlInPacket(void)
 {
 	uint16_t length = ControlData.wLength;
 
@@ -372,6 +372,13 @@ uint32_t GetVbus(void)
 
 	return (vbus);     //vbus状态
 }
+
+
+uint8_t UsbConnectStatus(void)
+{
+	return UsbConnected;
+}
+
 
 void UdcInit(void)
 {
@@ -447,12 +454,12 @@ void UdcInit(void)
 	OtgReg->Core.gintmsk &= ~(1<<4);
 }
 
-void ep0in_ack(void)
+static void ep0in_ack(void)
 {
 	WriteEndpoint0(0, NULL);
 }
 
-void set_address(void)
+static void set_address(void)
 {
 	pUSB_OTG_REG OtgReg = (pUSB_OTG_REG)RKIO_USBOTG_BASE;
 
@@ -464,7 +471,7 @@ void set_address(void)
 /***************************************************************************
 返回stall应答
 ***************************************************************************/
-void stall_ep0(void)
+static void stall_ep0(void)
 {
 	pUSB_OTG_REG OtgReg = (pUSB_OTG_REG)RKIO_USBOTG_BASE;
 
@@ -472,7 +479,7 @@ void stall_ep0(void)
 	OtgReg->Device.InEp[0].DiEpCtl |= 1<<21;   //send IN0 stall handshack
 }
 
-void set_configuration(void)
+static void set_configuration(void)
 {
 	pUSB_OTG_REG OtgReg = (pUSB_OTG_REG)RKIO_USBOTG_BASE;
 
@@ -560,6 +567,7 @@ static void dwc_otg_setup(struct usb_endpoint_instance *endpoint)
 					break;
 				case 9:
 					usbdbg("set configuration\n");
+					UsbConnected = 1;
 					udc_state_transition(udc_device->device_state,STATE_CONFIGURED);
 					set_configuration();
 					break;
@@ -922,7 +930,7 @@ void udc_connect(void)
 /* Turn off the USB connection by disabling the pullup resistor */
 void udc_disconnect(void)
 {
-
+	UsbConnected = 0;
 }
 
 /* Switch on the UDC */
