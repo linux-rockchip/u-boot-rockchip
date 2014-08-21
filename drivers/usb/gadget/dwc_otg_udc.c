@@ -71,6 +71,8 @@
 /* usb otg base */
 #if (CONFIG_RKCHIPTYPE == CONFIG_RK3288)
 	#define RKIO_USBOTG_BASE	RKIO_USBOTG_PHYS
+#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3036) || (CONFIG_RKCHIPTYPE == CONFIG_RK3126) || (CONFIG_RKCHIPTYPE == CONFIG_RK3128)
+	#define RKIO_USBOTG_BASE	RKIO_USBOTG20_PHYS
 #else
 	#error "PLS config chiptype for usb otg base!"
 #endif
@@ -353,7 +355,7 @@ uint32_t GetVbus(void)
 		/* delay more than 1ms, waiting for usb phy init */
 		mdelay(3);
 	}
-#elif (CONFIG_RKCHIPTYPE == CONFIG_RK312X)
+#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3126) || (CONFIG_RKCHIPTYPE == CONFIG_RK3128)
 	if (grf_readl(GRF_UOC0_CON0) & (0x01 << 0)) {
 		/* exit suspend */
 		grf_writel(((0x01 << 0) << 16), GRF_UOC0_CON0);
@@ -1067,13 +1069,36 @@ int dwc_otg_check_dpdm(void)
 	char *OtgReg = RKIO_USBOTG_BASE;
 
 #if (CONFIG_RKCHIPTYPE == CONFIG_RK3288)
-	cru_writel(((7<<4)<<16)|(7<<4), CRU_SOFTRSTS_CON(8));    // otg0 phy clkgate
+	cru_writel(((7<<4)<<16)|(7<<4), CRU_SOFTRSTS_CON(8)); // otg0 phy reset
 	udelay(3);
-	cru_writel(((7<<4)<<16)|(0<<4), CRU_SOFTRSTS_CON(8));  // otg0 phy clkgate
+	cru_writel(((7<<4)<<16)|(0<<4), CRU_SOFTRSTS_CON(8));
 	mdelay(50);
-   
+
 	grf_writel(((0x01<<2)<<16), GRF_UOC0_CON2); // exit suspend.
 	mdelay(105);
+#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3036)
+	cru_writel(((5<<5)<<16)|(5<<5), CRU_SOFTRSTS_CON(4)); // otg phy reset
+	cru_writel(((1<<7)<<16)|(1<<7), CRU_SOFTRSTS_CON(6));
+	udelay(3);
+	cru_writel(((5<<5)<<16)|(0<<5), CRU_SOFTRSTS_CON(4));
+	cru_writel(((1<<7)<<16)|(0<<7), CRU_SOFTRSTS_CON(6));
+	mdelay(50);
+
+	grf_writel(((0x01<<0)<<16), GRF_UOC0_CON5); // exit suspend.
+	mdelay(105);
+#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3126) || (CONFIG_RKCHIPTYPE == CONFIG_RK3128)
+	cru_writel(((5<<5)<<16)|(5<<5), CRU_SOFTRSTS_CON(4)); // otg phy reset
+	cru_writel(((1<<7)<<16)|(1<<7), CRU_SOFTRSTS_CON(6));
+	udelay(3);
+	cru_writel(((5<<5)<<16)|(0<<5), CRU_SOFTRSTS_CON(4));
+	cru_writel(((1<<7)<<16)|(0<<7), CRU_SOFTRSTS_CON(6));
+	mdelay(50);
+
+	grf_writel(((0x01<<0)<<16), GRF_UOC0_CON0); // exit suspend.
+	mdelay(105);
+#else
+	#error "PLS config chiptype for usb dpdm check!"
+#endif
 	otg_dctl = (unsigned int * )(OtgReg+0x804);
 	otg_gotgctl = (unsigned int * )(OtgReg);
 	otg_hprt0 = (unsigned int * )(OtgReg + DWC_OTG_HOST_PORT_REGS_OFFSET);
@@ -1088,9 +1113,7 @@ int dwc_otg_check_dpdm(void)
 			bus_status = 2;
 		*otg_dctl |= 2;
 	}
-#else
-	#error "PLS config chiptype for usb dpdm check!"
-#endif
+
 	// printf("%s %d \n",__func__,bus_status);
 
 	return bus_status;
