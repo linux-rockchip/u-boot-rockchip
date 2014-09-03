@@ -27,12 +27,23 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+/* audi-s no pmu module, no support pm */
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3036)
+#undef CONFIG_PM_SUBSYSTEM
+#endif
+
 #ifdef CONFIG_PM_SUBSYSTEM
 
 #define RKPM_VERSION		"1.0"
 
 #if (CONFIG_RKCHIPTYPE == CONFIG_RK3288)
 	#define RK_WAKEUP_KEY_PIN	(GPIO_BANK0 | GPIO_A5)
+#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3126) || (CONFIG_RKCHIPTYPE == CONFIG_RK3128)
+	/* 	audi playkey maybe:
+	 * gpio1_a4 for usb wifi board
+	 * gpio0_a2 for sdio wifi board
+	 */
+	#define RK_WAKEUP_KEY_PIN	(GPIO_BANK1 | GPIO_A4)
 #else
 	#error	"PLS config wake up key for chip!"
 #endif

@@ -828,6 +828,24 @@ RKCHIP ?= RK3288
 RK_UBOOT_VERSION = 01
 endif
 
+ifeq ($(CONFIG_RKCHIPTYPE),$(CONFIG_RK3036))
+RKCHIP ?= RK3036
+# rk uboot version should consist of two digits, as 01
+RK_UBOOT_VERSION = 06
+endif
+
+ifeq ($(CONFIG_RKCHIPTYPE),$(CONFIG_RK3126))
+RKCHIP ?= RK312X
+# rk uboot version should consist of two digits, as 01
+RK_UBOOT_VERSION = 07
+endif
+
+ifeq ($(CONFIG_RKCHIPTYPE),$(CONFIG_RK3128))
+RKCHIP ?= RK312X
+# rk uboot version should consist of two digits, as 01
+RK_UBOOT_VERSION = 07
+endif
+
 RKCHIP ?= `sed -n "/CHIP=/s/CHIP=//p" RKBOOT.ini|tr -d '\r'`
 
 UBOOTVERSION := $(UBOOTVERSION)$(if $(RKCHIP),-$(RKCHIP))$(if $(RK_UBOOT_VERSION),-$(RK_UBOOT_VERSION))
@@ -836,8 +854,6 @@ RK_SUBFIX = $(if $(RK_UBOOT_VERSION),.$(RK_UBOOT_VERSION)).bin
 
 ifdef CONFIG_SECOND_LEVEL_BOOTLOADER
 RKLoader_uboot.bin: u-boot.bin
-	./tools/boot_merger --subfix "$(RK_SUBFIX)" \
-		./tools/rk_tools/RKBOOT/$(RKCHIP)MINIALL.ini && \
 	./tools/loaderimage --pack u-boot.bin uboot.img
 else
 RKLoader_uboot.bin: u-boot.bin

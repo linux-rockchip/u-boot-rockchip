@@ -1273,6 +1273,81 @@ static struct rk_pl330_platdata g_dmac0_pdata = {
 		[31] = DMACH_MAX,
 	},
 };
+
+#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3036)
+static struct rk_pl330_platdata g_dmac0_pdata = {
+	.peri = {
+		[0] = DMACH_I2S_TX,
+		[1] = DMACH_I2S_RX,
+		[2] = DMACH_UART0_TX,
+		[3] = DMACH_UART0_RX,
+		[4] = DMACH_UART1_TX,
+		[5] = DMACH_UART1_RX,
+		[6] = DMACH_UART2_TX,
+		[7] = DMACH_UART2_RX,
+		[8] = DMACH_SPI_TX,
+		[9] = DMACH_SPI_RX,
+		[10] = DMACH_SDMMC,
+		[11] = DMACH_SDIO,
+		[12] = DMACH_EMMC,
+		[13] = DMACH_SPDIF_TX,
+		[14] = DMACH_MAX,
+		[15] = DMACH_MAX,
+		[16] = DMACH_DMAC2_MEMTOMEM,
+		[17] = DMACH_MAX,
+		[18] = DMACH_MAX,
+		[19] = DMACH_MAX,
+		[20] = DMACH_MAX,
+		[21] = DMACH_MAX,
+		[22] = DMACH_MAX,
+		[23] = DMACH_MAX,
+		[24] = DMACH_MAX,
+		[25] = DMACH_MAX,
+		[26] = DMACH_MAX,
+		[27] = DMACH_MAX,
+		[28] = DMACH_MAX,
+		[29] = DMACH_MAX,
+		[30] = DMACH_MAX,
+		[31] = DMACH_MAX,
+	},
+};
+#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3126) || (CONFIG_RKCHIPTYPE == CONFIG_RK3128)
+static struct rk_pl330_platdata g_dmac0_pdata = {
+	.peri = {
+		[0] = DMACH_I2S_2CH_TX,
+		[1] = DMACH_I2S_2CH_RX,
+		[2] = DMACH_UART0_TX,
+		[3] = DMACH_UART0_RX,
+		[4] = DMACH_UART1_TX,
+		[5] = DMACH_UART1_RX,
+		[6] = DMACH_UART2_TX,
+		[7] = DMACH_UART2_RX,
+		[8] = DMACH_SPI_TX,
+		[9] = DMACH_SPI_RX,
+		[10] = DMACH_SDMMC,
+		[11] = DMACH_SDIO,
+		[12] = DMACH_EMMC,
+		[13] = DMACH_SPDIF_TX,
+		[14] = DMACH_I2S_8CH_TX,
+		[15] = DMACH_I2S_8CH_TX,
+		[16] = DMACH_MAX,
+		[17] = DMACH_MAX,
+		[18] = DMACH_DMAC2_MEMTOMEM,
+		[19] = DMACH_MAX,
+		[20] = DMACH_MAX,
+		[21] = DMACH_MAX,
+		[22] = DMACH_MAX,
+		[23] = DMACH_MAX,
+		[24] = DMACH_MAX,
+		[25] = DMACH_MAX,
+		[26] = DMACH_MAX,
+		[27] = DMACH_MAX,
+		[28] = DMACH_MAX,
+		[29] = DMACH_MAX,
+		[30] = DMACH_MAX,
+		[31] = DMACH_MAX,
+	},
+};
 #else 
 	#error "Please config CONFIG_RKCHIPTYPE for dmac0."
 #endif
@@ -1357,6 +1432,7 @@ static struct rk_pl330_platdata g_dmac1_pdata = {
 		[31] = DMACH_MAX,
 	},
 };
+
 #else
 	#error "Please config CONFIG_RKCHIPTYPE for dmac1."
 #endif

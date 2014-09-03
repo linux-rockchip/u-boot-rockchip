@@ -150,6 +150,10 @@ typedef enum UART_ch {
 	UART_CH2,
 	UART_CH3,
 	UART_CH4,
+#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3036) || (CONFIG_RKCHIPTYPE == CONFIG_RK3126) || (CONFIG_RKCHIPTYPE == CONFIG_RK3128)
+	UART_CH0,
+	UART_CH1,
+	UART_CH2,
 #else
 	#error "PLS config chip type for uart ch!"
 #endif

@@ -28,10 +28,17 @@
 #define KEY_LONG_PRESS		-1
 #define KEY_SHORT_PRESS		1
 
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3126)
+#define KEY_ADC_CN		2
+#else
+#define KEY_ADC_CN		1
+#endif
+
 typedef enum{
 	KEY_NULL,
 	KEY_AD,      // AD°´¼ü
 	KEY_INT,
+	KYE_REMOTE,
 }KEY_TYPE;
 
 typedef struct

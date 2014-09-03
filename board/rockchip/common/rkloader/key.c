@@ -45,6 +45,15 @@ int gpio_reg[]={
 	RKIO_GPIO6_PHYS,
 	RKIO_GPIO7_PHYS,
 	RKIO_GPIO8_PHYS
+#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3036)
+	RKIO_GPIO0_PHYS,
+	RKIO_GPIO1_PHYS,
+	RKIO_GPIO2_PHYS
+#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3126) || (CONFIG_RKCHIPTYPE == CONFIG_RK3128)
+	RKIO_GPIO0_PHYS,
+	RKIO_GPIO1_PHYS,
+	RKIO_GPIO2_PHYS,
+	RKIO_GPIO3_PHYS,
 #else
 	#error "PLS check CONFIG_RKCHIPTYPE for key."
 #endif
@@ -59,6 +68,7 @@ key_config	key_rockusb;
 key_config	key_recovery;
 key_config	key_fastboot;
 key_config      key_power;
+key_config      key_remote;
 
 
 /*
@@ -138,64 +148,128 @@ int checkKey(uint32* boot_rockusb, uint32* boot_recovery, uint32* boot_fastboot)
 	return 0;
 }
 
+
 void RockusbKeyInit(key_config *key)
 {
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3036)
+	key->type = KEY_INT;
+	key->key.ioint.name = "rockusb_key";
+	key->key.ioint.gpio = ((GPIO_BANK2 << RK_GPIO_BANK_OFFSET) | GPIO_B0);
+	key->key.ioint.flags = IRQ_TYPE_EDGE_FALLING;
+	key->key.ioint.pressed_state = 0;
+	key->key.ioint.press_time = 0;
+#else
 	key->type = KEY_AD;
-	key->key.adc.index = 1;	
+	key->key.adc.index = KEY_ADC_CN;
 	key->key.adc.keyValueLow = 0;
 	key->key.adc.keyValueHigh= 30;
 	key->key.adc.data = SARADC_BASE;
 	key->key.adc.stas = SARADC_BASE+4;
 	key->key.adc.ctrl = SARADC_BASE+8;
+#endif
 }
 
 void RecoveryKeyInit(key_config *key)
 {
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3036)
+	key->type = KEY_NULL;
+#else
 	key->type = KEY_AD;
-	key->key.adc.index = 1;	
+	key->key.adc.index = KEY_ADC_CN;
 	key->key.adc.keyValueLow = 0;
 	key->key.adc.keyValueHigh= 30;
 	key->key.adc.data = SARADC_BASE;
 	key->key.adc.stas = SARADC_BASE+4;
 	key->key.adc.ctrl = SARADC_BASE+8;
+#endif
 }
 
 
 void FastbootKeyInit(key_config *key)
 {
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3036)
+	key->type = KEY_NULL;
+#else
 	key->type = KEY_AD;
-	key->key.adc.index = 1;	
+	key->key.adc.index = KEY_ADC_CN;
 	key->key.adc.keyValueLow = 170;
 	key->key.adc.keyValueHigh= 180;
 	key->key.adc.data = SARADC_BASE;
 	key->key.adc.stas = SARADC_BASE+4;
 	key->key.adc.ctrl = SARADC_BASE+8;
+#endif
 }
 
 
 void PowerKeyInit(void)
 {
 	//power_hold_gpio.name
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3036)
+	key_power.type = KEY_NULL;
+	key_power.key.ioint.name = NULL;
+#else
 	key_power.type = KEY_INT;
 	key_power.key.ioint.name = "power_key";
-	key_power.key.ioint.gpio = ((GPIO_BANK0 << RK_GPIO_BANK_OFFSET)| GPIO_A5);
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3288)
+	key_power.key.ioint.gpio = ((GPIO_BANK0 << RK_GPIO_BANK_OFFSET) | GPIO_A5);
+#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3126) || (CONFIG_RKCHIPTYPE == CONFIG_RK3128)
+	key_power.key.ioint.gpio = ((GPIO_BANK1 << RK_GPIO_BANK_OFFSET) | GPIO_A2);
+#endif
 	key_power.key.ioint.flags = IRQ_TYPE_EDGE_FALLING;
 	key_power.key.ioint.pressed_state = 0;
 	key_power.key.ioint.press_time = 0;
+#endif
 }
 
+extern int g_ir_keycode;
+extern int remotectl_do_something(void);
+extern void remotectlInitInDriver(void);
+
+extern unsigned int rkclk_get_pwm_clk(uint32 pwm_id);
+
+
+int RemotectlInit(void)
+{
+	int i = 0;
+	key_remote.type = KYE_REMOTE;
+	key_remote.key.ioint.name = NULL;
+	key_remote.key.ioint.gpio = (GPIO_BANK0 | GPIO_D3);
+	key_remote.key.ioint.flags = IRQ_TYPE_EDGE_FALLING;
+	key_remote.key.ioint.pressed_state = 0;
+	key_remote.key.ioint.press_time = 0;
+
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3036)
+	remotectlInitInDriver();
+
+	//select gpio0d3_sel for pwm3(IR)
+	grf_writel(0x40 | (0x40 << 16), 0xb4);
+
+	//install the irq hander for PWM irq.
+	irq_install_handler(IRQ_PWM, remotectl_do_something, NULL);
+	irq_handler_enable(IRQ_PWM);
+#endif
+	return 0;
+}
 
 int power_hold(void)
 {
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3036)
+	/* no power hold */
+#else
 	if (get_rockchip_pmic_id() == PMIC_ID_RICOH619)
 		return ricoh619_poll_pwr_key_sta();
 	else
 		return GetPortState(&key_power);
+#endif
 }
 
 
 void key_init(void)
 {
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3036)
+	RockusbKeyInit(&key_rockusb);
+	RemotectlInit();
+#else
 	charge_state_gpio.name = "charge_state";
 	charge_state_gpio.flags = 0;
 	charge_state_gpio.gpio = ((GPIO_BANK0 << RK_GPIO_BANK_OFFSET) | GPIO_B0);
@@ -207,18 +281,27 @@ void key_init(void)
 	FastbootKeyInit(&key_fastboot);
 	RecoveryKeyInit(&key_recovery);
 	PowerKeyInit();
+#endif
 }
 
 
 void powerOn(void)
 {
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3036)
+	/* no power hold */
+#else
 	if(power_hold_gpio.name != NULL)
 		gpio_direction_output(power_hold_gpio.gpio, power_hold_gpio.flags);
+#endif
 }
 
 void powerOff(void)
 {
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3036)
+	/* no power hold */
+#else
 	if(power_hold_gpio.name != NULL)
 		gpio_direction_output(power_hold_gpio.gpio, !power_hold_gpio.flags);
+#endif
 }
 

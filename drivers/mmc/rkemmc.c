@@ -109,6 +109,11 @@ static void emmcreset(void)
 	udelay(100);
 	cru_writel(0x00<<3 | 0x01<<(3+16), CRU_SOFTRSTS_CON(8));
 	udelay(200);
+#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3036) || (CONFIG_RKCHIPTYPE == CONFIG_RK3126) || (CONFIG_RKCHIPTYPE == CONFIG_RK3128)
+	cru_writel(0x01<<3 | 0x01<<(3+16), CRU_SOFTRSTS_CON(5));
+	udelay(100);
+	cru_writel(0x00<<3 | 0x01<<(3+16), CRU_SOFTRSTS_CON(5));
+	udelay(200);
 #else
 	#error "PLS config platform for emmc reset!"
 #endif
@@ -516,6 +521,14 @@ static void rk_set_ios(struct mmc *mmc)
 		rkclk_set_sdclk_src(RK_EMMC_ID, 1);
 		//rk32 emmc src generall pll, emmc automic divide setting freq to 1/2, for get the right freq, we divide this freq to 1/2
 		src_clk = rkclk_get_sdclk_src_freq(RK_EMMC_ID) / 2;
+#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3036)
+		// set general pll
+		rkclk_set_sdclk_src(RK_EMMC_ID, 2);
+		src_clk = rkclk_get_sdclk_src_freq(RK_EMMC_ID);
+#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3126) || (CONFIG_RKCHIPTYPE == CONFIG_RK3128)
+		// set general pll
+		rkclk_set_sdclk_src(RK_EMMC_ID, 1);
+		src_clk = rkclk_get_sdclk_src_freq(RK_EMMC_ID);
 #else
 		#error "PLS config platform for emmc reset!"
 #endif

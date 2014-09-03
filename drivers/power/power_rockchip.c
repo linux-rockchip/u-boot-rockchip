@@ -15,6 +15,8 @@ static unsigned char rockchip_pmic_id;
 static const char * const fg_names[] = {
 	"CW201X_FG",
 	"RICOH619_FG",
+	"RK818_FG",
+	"RT5025_FG",
 };
 
 
@@ -71,12 +73,16 @@ int pmic_charger_setting(int current)
 {
 	enum pmic_id  id = get_rockchip_pmic_id();
 	switch (id) {
+#if defined(CONFIG_POWER_ACT8846)
 		case PMIC_ID_ACT8846:
 			pmic_act8846_charger_setting(current);
 			break;
+#endif
+#if defined(CONFIG_POWER_RK808)
 		case PMIC_ID_RK808:
 			pmic_rk808_charger_setting(current);
 			break;
+#endif
 		default:
 			break;
 	}
@@ -113,6 +119,7 @@ int is_power_extreme_low(void)
 int pmic_init(unsigned char  bus)
 {
 	int ret;
+
 #if defined(CONFIG_POWER_RICOH619)
 	ret = pmic_ricoh619_init(bus);
 	if (ret >= 0) {
@@ -139,6 +146,25 @@ int pmic_init(unsigned char  bus)
 		return 0;
 	}
 #endif
+
+#if defined(CONFIG_POWER_RK818)
+	ret = pmic_rk818_init (bus);
+	if (ret >= 0) {
+		set_rockchip_pmic_id(PMIC_ID_RK818);
+		printf("pmic:rk818\n");
+		return 0;
+	}
+#endif
+
+#if defined(CONFIG_POWER_RT5025)
+	ret = pmic_rt5025_init (bus);
+	if (ret >= 0) {
+		set_rockchip_pmic_id(PMIC_ID_RT5025);
+		printf("pmic:rt5025\n");
+		return 0;
+	}
+#endif
+
 	return ret;
 }
 
@@ -160,15 +186,31 @@ void shut_down(void)
 {
 	enum pmic_id  id = get_rockchip_pmic_id();
 	switch (id) {
+#if defined(CONFIG_POWER_ACT8846)
 		case PMIC_ID_ACT8846:
 			pmic_act8846_shut_down();
 			break;
+#endif
+#if defined(CONFIG_POWER_RICOH619)
 		case PMIC_ID_RICOH619:
 			pmic_ricoh619_shut_down();
 			break;
+#endif
+#if defined(CONFIG_POWER_RK808)
 		case PMIC_ID_RK808:
 			pmic_rk808_shut_down();
 			break;
+#endif
+#if defined(CONFIG_POWER_RK818)
+		case PMIC_ID_RK818:
+			pmic_rk818_shut_down();
+			break;
+#endif
+#if defined(CONFIG_POWER_RT5025)
+		case PMIC_ID_RT5025:
+			pmic_rt5025_shut_down();
+			break;
+#endif
 		default:
 			break;
 	}
