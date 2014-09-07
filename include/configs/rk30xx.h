@@ -59,7 +59,8 @@ Revision:       1.00
 #define RK_FLASH_BOOT_EN
 #else
 #define CONFIG_SYS_TEXT_BASE    0x60000000
-#define RK_SDMMC_BOOT_EN
+//#define RK_SDMMC_BOOT_EN
+#define RK_SDCARD_BOOT_EN
 #endif
 
 /*

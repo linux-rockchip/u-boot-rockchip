@@ -40,7 +40,8 @@ Revision:		1.00
 #define     DRIVERS_UART
 #define     DRIVERS_NAND   
 #define 	RK28_FPGA		0
-#define     RK_SDMMC_BOOT_EN
+//#define     RK_SDMMC_BOOT_EN
+#define     RK_SDCARD_BOOT_EN
 //#define     L2CACHE_ENABLE
 //define		DRIVERS_MMU
 #define __packed __attribute__((packed))
@@ -50,7 +51,7 @@ Revision:		1.00
 #ifdef RK_SPI_BOOT_EN
 #define DRIVERS_SPI
 #endif
-#ifdef RK_SDMMC_BOOT_EN
+#if defined(RK_SDMMC_BOOT_EN) || defined(RK_SDCARD_BOOT_EN)
 #define DRIVERS_SDMMC
 #endif
 #ifdef RK_FLASH_BOOT_EN 
@@ -130,7 +131,7 @@ Revision:		1.00
 
 // by cmy
 #define PARAMETER_NUM			8			// parameter文件的备份个数
-#define PARAMETER_OFFSET		1024			// 每个parameter的偏移量
+#define PARAMETER_OFFSET		8192			// 每个parameter的偏移量
 #define SYS_LOADER_REBOOT_FLAG   0x5242C300  //高24是TAG,低8位是标记
 #define SYS_KERNRL_REBOOT_FLAG   0xC3524200  //高24是TAG,低8位是标记
 

@@ -418,7 +418,7 @@ int32 StorageInit(void)
         {
             memFunTab[memdev]->Valid = 1;
             //gpMemFun = memFunTab[memdev];
-#ifdef RK_SDCARD_BOOT_EN
+#if 0//def RK_SDCARD_BOOT_EN
             if(memFunTab[memdev]->flag == BOOT_FROM_SD0)
             {
                 if(BootFromSdCard(memFunTab[memdev]->id) != 0)

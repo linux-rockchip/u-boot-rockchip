@@ -664,7 +664,7 @@ uint32 sdBootGetUserPartOffset(uint8 ChipSel)
 }
 #endif
 
-#ifdef RK_SDCARD_BOOT_EN
+#if 0//def RK_SDCARD_BOOT_EN
 uint32 BootFromSdCard(uint8 ChipSel)
 {
     uint32 ret = -1;
