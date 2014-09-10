@@ -255,12 +255,18 @@ int do_booti(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 					"%s storagemedia=%s", command_line, medianame);
 		}
 
+		if (StorageGetBootMedia() == BOOT_FROM_SD0) {
+			snprintf(command_line, sizeof(command_line),
+					"%s %s", command_line, "sdfwupdate");
+		}
+
 		if (charge) {
 			snprintf(command_line, sizeof(command_line),
-					"%s %s",command_line," androidboot.mode=charger");
+					"%s %s", command_line, "androidboot.mode=charger");
 		}
+
 		snprintf(command_line, sizeof(command_line),
-				"%s loader.timestamp=%s",command_line, U_BOOT_TIMESTAMP);
+				"%s loader.timestamp=%s", command_line, U_BOOT_TIMESTAMP);
 
 #if defined CONFIG_RK_3288_HDMI || defined CONFIG_RK_3036_HDMI
 		snprintf(command_line, sizeof(command_line),
