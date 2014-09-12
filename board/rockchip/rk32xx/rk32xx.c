@@ -188,10 +188,11 @@ void init_panel_info(vidinfo_t *vid)
 #endif /* CONFIG_RK_FB */
 
 
-int board_rkmmc_init(void)
+int board_storage_init(void)
 {
 	if (StorageInit() == 0) {
 		printf("storage init OK!\n");
+		printf("storage media id = %d\n", StorageGetBootMedia());
 		return 0;
 	} else {
 		printf("storage init fail!\n");
