@@ -48,7 +48,6 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #if defined(RK_SDMMC_BOOT_EN) || defined(RK_SDCARD_BOOT_EN)
 	#define DRIVERS_SDMMC
-	#define RK_SDMMC_BOOT_EN
 	#define EMMC_NOT_USED_BOOT_PART
 	
 #if (CONFIG_RKCHIPTYPE == CONFIG_RK3036) || (CONFIG_RKCHIPTYPE == CONFIG_RK3126) || (CONFIG_RKCHIPTYPE == CONFIG_RK3128)
@@ -130,7 +129,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #include "rkloader/key.h"
 #include "storage/storage.h"
 
-#ifdef CONFIG_RK_SDMMC_BOOT_EN
+#if defined(CONFIG_RK_SDMMC_BOOT_EN) || defined(CONFIG_RK_SDCARD_BOOT_EN)
 #include "emmc/sdmmc_config.h"
 #include "mediaboot/sdmmcBoot.h"
 #endif
