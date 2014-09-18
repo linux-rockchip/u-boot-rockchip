@@ -35,7 +35,7 @@
 
 #include <asm/arch/cpu.h>		/* get chip and board defs */
 
-#define CONFIG_RKCHIPTYPE	CONFIG_RK3128
+#define CONFIG_RKCHIPTYPE	CONFIG_RK3288
 
 
 /* for rk common fold */
