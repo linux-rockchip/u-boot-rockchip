@@ -825,25 +825,25 @@ ifneq ($(CONFIG_ROCKCHIP),)
 ifeq ($(CONFIG_RKCHIPTYPE),$(CONFIG_RK3288))
 RKCHIP ?= RK3288
 # rk uboot version should consist of two digits, as 01
-RK_UBOOT_VERSION = 02
+RK_UBOOT_VERSION = 03
 endif
 
 ifeq ($(CONFIG_RKCHIPTYPE),$(CONFIG_RK3036))
 RKCHIP ?= RK3036
 # rk uboot version should consist of two digits, as 01
-RK_UBOOT_VERSION = 06
+RK_UBOOT_VERSION = 07
 endif
 
 ifeq ($(CONFIG_RKCHIPTYPE),$(CONFIG_RK3126))
 RKCHIP ?= RK312X
 # rk uboot version should consist of two digits, as 01
-RK_UBOOT_VERSION = 08
+RK_UBOOT_VERSION = 09
 endif
 
 ifeq ($(CONFIG_RKCHIPTYPE),$(CONFIG_RK3128))
 RKCHIP ?= RK312X
 # rk uboot version should consist of two digits, as 01
-RK_UBOOT_VERSION = 08
+RK_UBOOT_VERSION = 09
 endif
 
 RKCHIP ?= `sed -n "/CHIP=/s/CHIP=//p" RKBOOT.ini|tr -d '\r'`
