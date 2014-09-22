@@ -17,6 +17,7 @@ static const char * const fg_names[] = {
 	"RICOH619_FG",
 	"RK818_FG",
 	"RT5025_FG",
+	"RT5036_FG",
 };
 
 
@@ -165,6 +166,16 @@ int pmic_init(unsigned char  bus)
 	}
 #endif
 
+#if defined(CONFIG_POWER_RT5036)
+	ret = pmic_rt5036_init (bus);
+	if (ret >= 0) {
+		set_rockchip_pmic_id(PMIC_ID_RT5036);
+		printf("pmic:rt5036\n");
+		return 0;
+	}
+#endif
+
+
 	return ret;
 }
 
@@ -211,6 +222,12 @@ void shut_down(void)
 			pmic_rt5025_shut_down();
 			break;
 #endif
+#if defined(CONFIG_POWER_RT5036)
+		case PMIC_ID_RT5036:
+			pmic_rt5036_shut_down();
+			break;
+#endif
+
 		default:
 			break;
 	}
