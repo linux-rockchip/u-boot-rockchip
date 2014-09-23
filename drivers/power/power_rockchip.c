@@ -175,6 +175,14 @@ int pmic_init(unsigned char  bus)
 	}
 #endif
 
+#if defined(CONFIG_POWER_ACT8931)
+	ret = pmic_act8931_init (bus);
+	if (ret >= 0) {
+		set_rockchip_pmic_id(PMIC_ID_ACT8931);
+		printf("pmic:act8931\n");
+		return 0;
+	}
+#endif
 
 	return ret;
 }
@@ -225,6 +233,11 @@ void shut_down(void)
 #if defined(CONFIG_POWER_RT5036)
 		case PMIC_ID_RT5036:
 			pmic_rt5036_shut_down();
+			break;
+#endif
+#if defined(CONFIG_POWER_ACT8931)
+		case PMIC_ID_ACT8931:
+			pmic_act8931_shut_down();
 			break;
 #endif
 
