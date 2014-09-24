@@ -181,7 +181,7 @@
 #define CONFIG_RK_CLOCK
 
 /* rk deviceinfo partition */
-//#define CONFIG_RK_DEVICEINFO
+#define CONFIG_RK_DEVICEINFO
 
 /* rk pwm remote ctrl */
 #define CONFIG_RK_PWM_REMOTE
