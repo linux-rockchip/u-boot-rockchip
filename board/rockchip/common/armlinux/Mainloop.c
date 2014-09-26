@@ -21,6 +21,7 @@ Revision:		1.57(cmy):
 
 
 
+#if 0
 extern uint32       	gLoaderHasGetIdblock;
 extern void             start_linux(PBootInfo pboot_info);
 extern uint32           part2_data[];
@@ -433,7 +434,10 @@ uint32 getSysProtAddr(void)
     }
     return sysProtAddr;
 }
-#if 0
+#endif
+extern char bootloader_ver[];
+
+#define TAG_PARAMETER			0x4D524150
 #define TAG_KERNEL			0x4C4E524B
 typedef struct tagKernelImg
 {
@@ -441,11 +445,11 @@ typedef struct tagKernelImg
 	uint32	size;
 	char	image[1];
 	uint32	crc;
-}KernelImg, *PKernelImg;
+}KernelImg;
 
 void UsbBootLinux(uint32 KernelAddr,uint32 Parameter)
 {
-    KernelImg * pKernrlImg = (KernelImg * )KernelAddr;
+    KernelImg *pKernelImg;
     if(Parameter == 0)
     {
         void (*pfun)(void);
@@ -456,6 +460,13 @@ void UsbBootLinux(uint32 KernelAddr,uint32 Parameter)
         /* we assume that the kernel is in place */
         pfun();
     }
+
+    pKernelImg = (KernelImg *)Parameter;
+    if(pKernelImg->tag == TAG_PARAMETER)
+    {
+        memmove((uint8*)Parameter, (uint8*)(pKernelImg->image), pKernelImg->size);        
+    }
+
     memset(&gBootInfo, 0, sizeof(gBootInfo));
     RkPrintf("analyze parameter\n");
     // 解析参数
@@ -469,12 +480,25 @@ void UsbBootLinux(uint32 KernelAddr,uint32 Parameter)
     strcat(gBootInfo.cmd_line, " firmware_ver=");
     strcat(gBootInfo.cmd_line, gBootInfo.fw_version);
 
+    setenv("bootargs", gBootInfo.cmd_line);
+
     // 根据内核地址分配大数据的缓存位置
     //setup_space(gBootInfo.kernel_load_addr);
-    gBootInfo.kernel_load_addr = KernelAddr;
-    if(pKernrlImg->tag == TAG_KERNEL)
+
+    pKernelImg = (KernelImg *)KernelAddr;
+    if(gBootInfo.kernel_load_addr != 0 && pKernelImg->tag == TAG_KERNEL)
     {
-        ftl_memcpy((uint8*)gBootInfo.kernel_load_addr,(uint8*)(gBootInfo.kernel_load_addr+8),pKernrlImg->size);        
+        memmove((uint8*)gBootInfo.kernel_load_addr, (uint8*)(pKernelImg->image), pKernelImg->size);        
+    }
+    else
+    {
+        gBootInfo.kernel_load_addr = KernelAddr;
+    }
+
+    pKernelImg = (KernelImg *)gBootInfo.ramdisk_load_addr;
+    if(gBootInfo.ramdisk_load_addr != 0 && pKernelImg->tag == TAG_KERNEL)
+    {
+        memmove((uint8*)gBootInfo.ramdisk_load_addr, (uint8*)(pKernelImg->image), pKernelImg->size);        
     }
 
 	RkPrintf("END ===== %d\n", RkldTimerGetTick());
@@ -486,11 +510,12 @@ void UsbBootLinux(uint32 KernelAddr,uint32 Parameter)
 				gBootInfo.atag_addr,
 				gBootInfo.cmd_line);
 #else    
-    //ftl_memcpy((char *)0x60000000,gBootInfo.cmd_line,1024);
-	bootm_linux(gBootInfo.kernel_load_addr,
-				gBootInfo.machine_type,
-				gBootInfo.atag_addr,
-				gBootInfo.cmd_line);
+    bootm_headers_t images;
+    memset(&images, 0, sizeof(images));
+    images.ep = gBootInfo.kernel_load_addr;
+    images.rd_start = gBootInfo.ramdisk_load_addr;
+    images.rd_end = gBootInfo.ramdisk_load_addr + gBootInfo.ramdisk_size;
+    puts("UsbBootLinux: do_bootm_linux...\n");
+    do_bootm_linux(0, 0, NULL, &images);
 #endif    
 }
-#endif

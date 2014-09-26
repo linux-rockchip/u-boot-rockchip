@@ -11,7 +11,7 @@
 #obj-y += armlinux/armlinux.o
 obj-y += armlinux/bootloader.o
 obj-y += armlinux/enter_recovery.o
-#obj-y += armlinux/Mainloop.o
+obj-y += armlinux/Mainloop.o
 obj-y += armlinux/mtdpart.o
 obj-y += armlinux/parameter.o
 #obj-y += armlinux/session.o

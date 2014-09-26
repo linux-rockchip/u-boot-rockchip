@@ -416,13 +416,13 @@ void UsbHook(void)
             #endif
         }
  #endif
-#ifdef LINUX_LOADER
         else if(FW_SDRAM_ExcuteAddr)
         {
-            //extern void UsbBootLinux(uint32 KernelAddr,uint32 Parameter);
-            //UsbBootLinux(FW_SDRAM_ExcuteAddr,FW_SDRAM_Parameter);
+            extern void UsbBootLinux(uint32 KernelAddr,uint32 Parameter);
+            UsbBootLinux(FW_SDRAM_ExcuteAddr,FW_SDRAM_Parameter);
             FW_SDRAM_ExcuteAddr = 0 ;
         }
+#ifdef LINUX_LOADER
         else if(UsbConnected==0)
         {
             if(g_BootRockusb != 2)

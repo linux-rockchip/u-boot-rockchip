@@ -57,7 +57,7 @@ void FWOutPacket(uint32 len)
         CacheFlushDRegion((uint32)&gCBW,sizeof(gCBW));
         if(gCBW.Code == K_FW_SDRAM_EXECUTE)
         {
-            uint8 *pchar = (uint8*)DataBuf;
+            uint8 *pchar = (uint8*)&gCBW;
             FW_SDRAM_Parameter = ((uint32)pchar[25])|((uint32)pchar[24]<<8)|((uint32)pchar[23]<<16)|((uint32)pchar[22]<<24);
         }
         gCBW.LBA=Swap32(gCBW.LBA);
