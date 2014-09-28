@@ -32,6 +32,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #if defined(CONFIG_RKCHIP_RK3288)
 #define TIMER_REG_BASE			RKIO_TIMER_6CH_PHYS
+#define ARCH_TIMER_REG_BASE		(RKIO_TIMER_2CH_PHYS + 0x20)
 #elif defined(CONFIG_RKCHIP_RK3036) \
 	|| defined(CONFIG_RKCHIP_RK3126) || defined(CONFIG_RKCHIP_RK3128)
 #define TIMER_REG_BASE			RKIO_TIMER_PHYS
@@ -78,6 +79,15 @@ static inline void rk_timer_init(void)
 	writel(0x01, TIMER_REG_BASE + TIMER_CTRL_REG);
 }
 
+#if defined(ARCH_TIMER_REG_BASE)
+static inline void rk3288_arch_timer_init(void)
+{
+	writel(0, ARCH_TIMER_REG_BASE + RK_TIMER_CONTROL_REG);
+	writel(TIMER_LOAD_VAL, ARCH_TIMER_REG_BASE + RK_TIMER_LOADE_COUNT0);
+	writel(TIMER_LOAD_VAL, ARCH_TIMER_REG_BASE + RK_TIMER_LOADE_COUNT1);
+	writel(1, ARCH_TIMER_REG_BASE + RK_TIMER_CONTROL_REG);
+}
+#endif
 
 /* calculate the equivalent tick value of the timer count */
 static inline unsigned long long tcount_to_tick(unsigned long long tcount)
@@ -124,6 +134,9 @@ static inline unsigned long get_current_timer_value(void)
 int timer_init(void)
 {
 	rk_timer_init();  
+#if defined(ARCH_TIMER_REG_BASE)
+	rk3288_arch_timer_init();
+#endif
 	reset_timer_masked();
 
 	return 0;
