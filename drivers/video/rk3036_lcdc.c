@@ -1149,11 +1149,6 @@ void rk30_lcdc_set_par(struct fb_dsp_info *fb_info,
 		fb_info->ypos  /= 2;
 	}
 
-	if (vid->vmode) {
-		fb_info->ysize /= 2;
-		fb_info->ypos  /= 2;
-	}
-
 	fb_info->layer_id = lcdc_dev->dft_win;
 	if(fb_info->layer_id == WIN0)
 		win0_set_par(lcdc_dev, fb_info, vid);
@@ -1195,7 +1190,10 @@ int rk30_load_screen(vidinfo_t *vid)
 		} else {
 			printf("unsupported video timing!\n");
 			return -EINVAL;
-		}		
+		}
+		if (CONFIG_RKCHIPTYPE == CONFIG_RK3128)
+			lcdc_msk_reg(lcdc_dev, DSP_CTRL0, m_SW_UV_OFFSET_EN,
+				     v_SW_UV_OFFSET_EN(1));
 	} else if (vid->screen_type == SCREEN_LVDS) {
 		msk = m_LVDS_DCLK_INVERT | m_LVDS_DCLK_EN;
 		val = v_LVDS_DCLK_INVERT(1) | v_LVDS_DCLK_EN(1);
