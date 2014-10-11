@@ -1136,7 +1136,7 @@ static void rk312x_lcdc_cfg_bcsh(struct lcdc_device *lcdc_dev)
                 v_BCSH_Y2R_EN(0) | v_BCSH_EN(1) | v_BCSH_OUT_MODE(3);
 	lcdc_msk_reg(lcdc_dev, BCSH_CTRL, msk, val);
 	lcdc_msk_reg(lcdc_dev, DSP_CTRL1, m_BG_COLOR,
-		      v_BG_COLOR(0x800a80));
+		      v_BG_COLOR(0x801080));
 	lcdc_cfg_done(lcdc_dev);
 }
 /* Configure VENC for a given Mode (NTSC / PAL) */
@@ -1144,6 +1144,10 @@ void rk30_lcdc_set_par(struct fb_dsp_info *fb_info,
 			     vidinfo_t *vid)
 {
 	struct lcdc_device *lcdc_dev = &rk312x_lcdc;
+	if (vid->vmode) {
+		fb_info->ysize /= 2;
+		fb_info->ypos  /= 2;
+	}
 
 	if (vid->vmode) {
 		fb_info->ysize /= 2;
@@ -1282,9 +1286,11 @@ int rk30_load_screen(vidinfo_t *vid)
 		      v_VASP(2 * (vid->vl_vspw + vid->vl_vbpd) + vid->vl_row/2 + vid->vl_vfpd + 1);
 		lcdc_writel(lcdc_dev, DSP_VACT_ST_END_F1, val);
 		msk = m_INTERLACE_DSP_EN | m_WIN1_INTERLACE_EN |
-		      m_WIN0_YRGB_DEFLICK_EN | m_WIN0_CBR_DEFLICK_EN;
-		val = v_INTERLACE_DSP_EN(1) | v_WIN1_INTERLACE_EN(0) |
-		      v_WIN0_YRGB_DEFLICK_EN(1) | v_WIN0_CBR_DEFLICK_EN(1);
+		      m_WIN0_YRGB_DEFLICK_EN | m_WIN0_CBR_DEFLICK_EN |
+		      m_WIN0_INTERLACE_EN;
+		val = v_INTERLACE_DSP_EN(1) | v_WIN1_INTERLACE_EN(1) |
+		      v_WIN0_YRGB_DEFLICK_EN(1) | v_WIN0_CBR_DEFLICK_EN(1) |
+		      v_WIN0_INTERLACE_EN(1);
 		lcdc_msk_reg(lcdc_dev,DSP_CTRL0, msk, val);
 
 		lcdc_msk_reg(lcdc_dev, DSP_CTRL0,
@@ -1313,9 +1319,11 @@ int rk30_load_screen(vidinfo_t *vid)
 		      v_VASP(vid->vl_vspw + vid->vl_vbpd);
 		lcdc_writel(lcdc_dev, DSP_VACT_ST_END, val);
 		msk = m_INTERLACE_DSP_EN | m_WIN1_INTERLACE_EN |
-		      m_WIN0_YRGB_DEFLICK_EN | m_WIN0_CBR_DEFLICK_EN;
+		      m_WIN0_YRGB_DEFLICK_EN | m_WIN0_CBR_DEFLICK_EN |
+		      m_WIN0_INTERLACE_EN;;
 		val = v_INTERLACE_DSP_EN(0) | v_WIN1_INTERLACE_EN(0) |
-		      v_WIN0_YRGB_DEFLICK_EN(0) | v_WIN0_CBR_DEFLICK_EN(0);
+		      v_WIN0_YRGB_DEFLICK_EN(0) | v_WIN0_CBR_DEFLICK_EN(0) |
+		      v_WIN0_INTERLACE_EN(0);
 		lcdc_msk_reg(lcdc_dev, DSP_CTRL0, msk, val);
 
 		lcdc_msk_reg(lcdc_dev, DSP_CTRL0,
@@ -1335,6 +1343,26 @@ int rk30_load_screen(vidinfo_t *vid)
 		msk = m_LF_INT_NUM;
 		val = v_LF_INT_NUM(vid->vl_vspw + vid->vl_vbpd + vid->vl_row);
 		lcdc_msk_reg(lcdc_dev, INT_STATUS, msk, val);
+	}
+
+	if (vid->screen_type == SCREEN_HDMI) {
+		if (CONFIG_RKCHIPTYPE == CONFIG_RK3128) {
+			 lcdc_msk_reg(lcdc_dev, DSP_CTRL0,
+				      m_SW_UV_OFFSET_EN,
+				      v_SW_UV_OFFSET_EN(0));
+			 msk = m_HDMI_HSYNC_POL | m_HDMI_VSYNC_POL |
+				m_HDMI_DEN_POL;
+			 val = v_HDMI_HSYNC_POL(vid->vl_hsp) |
+			       v_HDMI_VSYNC_POL(vid->vl_vsp) |
+			       v_HDMI_DEN_POL(vid->vl_oep);
+			 lcdc_msk_reg(lcdc_dev, INT_SCALER, msk, val);
+		 } else {
+			 msk = (1 << 4) | (1 << 5) | (1 << 6);
+			 val = (vid->vl_hsp << 4) |
+				 (vid->vl_vsp << 5) |
+				 (vid->vl_oep << 6);
+			 grf_writel((msk << 16)|val,GRF_SOC_CON2);
+		 }
 	}
 	
 	lcdc_cfg_done(lcdc_dev);
