@@ -493,12 +493,6 @@ void UsbHook(void)
             FWSetResetFlag = 0;
             powerOff();
         }
-        else if(FWSetResetFlag==3) //reboot 2 maskrom
-        {
-            ISetLoaderFlag(0xEF08A53C);
-            FWSetResetFlag = 0;
-            SoftReset();
-        }
         else if(FWSetResetFlag==4) //reboot 2 maskrom
         {
             FWSetResetFlag = 0;
@@ -518,6 +512,12 @@ void UsbHook(void)
 #else
         if(FWSetResetFlag==0xFF)
         {
+            FWSetResetFlag = 0;
+            SoftReset();
+        }
+        else if(FWSetResetFlag==3) //reboot 2 maskrom
+        {
+            ISetLoaderFlag(0xEF08A53C);
             FWSetResetFlag = 0;
             SoftReset();
         }
