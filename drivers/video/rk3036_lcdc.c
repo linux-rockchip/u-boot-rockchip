@@ -1191,7 +1191,7 @@ int rk30_load_screen(vidinfo_t *vid)
 			printf("unsupported video timing!\n");
 			return -EINVAL;
 		}
-		if (CONFIG_RKCHIPTYPE == CONFIG_RK3128)
+		if (gd->arch.chiptype == CONFIG_RK3128)
 			lcdc_msk_reg(lcdc_dev, DSP_CTRL0, m_SW_UV_OFFSET_EN,
 				     v_SW_UV_OFFSET_EN(1));
 	} else if (vid->screen_type == SCREEN_LVDS) {
@@ -1344,7 +1344,7 @@ int rk30_load_screen(vidinfo_t *vid)
 	}
 
 	if (vid->screen_type == SCREEN_HDMI) {
-		if (CONFIG_RKCHIPTYPE == CONFIG_RK3128) {
+		if (gd->arch.chiptype == CONFIG_RK3128) {
 			 lcdc_msk_reg(lcdc_dev, DSP_CTRL0,
 				      m_SW_UV_OFFSET_EN,
 				      v_SW_UV_OFFSET_EN(0));
