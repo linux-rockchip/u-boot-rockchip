@@ -521,6 +521,12 @@ void UsbHook(void)
             FWSetResetFlag = 0;
             SoftReset();
         }
+        else if(FWSetResetFlag>=0xF0)
+        {
+            ISetLoaderFlag(SYS_LOADER_REBOOT_FLAG|(0xFF-FWSetResetFlag));
+            FWSetResetFlag = 0;
+            SoftReset();
+        }
 #endif
         SysLowFormatCheck();
     }
