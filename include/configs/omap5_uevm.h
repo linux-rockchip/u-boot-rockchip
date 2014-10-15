@@ -26,6 +26,7 @@
 /* MMC ENV related defines */
 #define CONFIG_ENV_IS_IN_MMC
 #define CONFIG_SYS_MMC_ENV_DEV		1	/* SLOT2: eMMC(1) */
+#define CONFIG_ENV_SIZE			(128 << 10)
 #define CONFIG_ENV_OFFSET		0xE0000
 #define CONFIG_ENV_OFFSET_REDUND	(CONFIG_ENV_OFFSET + CONFIG_ENV_SIZE)
 #define CONFIG_SYS_REDUNDAND_ENVIRONMENT
@@ -71,7 +72,6 @@
 /* Max time to hold reset on this board, see doc/README.omap-reset-time */
 #define CONFIG_OMAP_PLATFORM_RESET_TIME_MAX_USEC	16296
 
-#define CONFIG_BOARD_LATE_INIT
 #define CONFIG_CMD_SCSI
 #define CONFIG_LIBATA
 #define CONFIG_SCSI_AHCI

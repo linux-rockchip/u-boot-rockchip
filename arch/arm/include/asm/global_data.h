@@ -32,7 +32,7 @@ struct arch_global_data {
 
 #ifdef CONFIG_RK_CLOCK
 	/* "static data" needed by rk's clock.c */
-#if (CONFIG_RKCHIPTYPE == CONFIG_RK3288)
+#if defined(CONFIG_RKCHIP_RK3288)
 	unsigned long	cpu_mp_rate_hz;
 	unsigned long	cpu_m0_rate_hz;
 	unsigned long	cpu_l2ram_rate_hz;
@@ -44,7 +44,7 @@ struct arch_global_data {
 	unsigned long	aclk_bus_rate_hz;
 	unsigned long	pclk_bus_rate_hz;
 	unsigned long	hclk_bus_rate_hz;
-#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3036) || (CONFIG_RKCHIPTYPE == CONFIG_RK3126) || (CONFIG_RKCHIPTYPE == CONFIG_RK3128)
+#elif defined(CONFIG_RKCHIP_RK3036) || defined(CONFIG_RKCHIP_RK3126) || defined(CONFIG_RKCHIP_RK3128)
 	unsigned long	aclk_cpu_rate_hz;
 	unsigned long	pclk_cpu_rate_hz;
 	unsigned long	hclk_cpu_rate_hz;
@@ -73,20 +73,46 @@ struct arch_global_data {
 	struct omap_boot_parameters omap_boot_params;
 #endif
 #ifdef CONFIG_ROCKCHIP
-    unsigned long rk_extra_buf_addr;
+	unsigned long rk_global_buf_addr;
+	unsigned long rk_boot_buf_addr;
 #endif
 #ifdef CONFIG_CMD_FASTBOOT
-    unsigned long fastboot_buf_addr;
-    unsigned long fastboot_log_buf_addr;
+	unsigned long fastboot_buf_addr;
+	unsigned long fastboot_log_buf_addr;
 #endif
 };
 
 #include <asm-generic/global_data.h>
 
+#ifdef __clang__
+
+#define DECLARE_GLOBAL_DATA_PTR
+#define gd	get_gd()
+
+static inline gd_t *get_gd(void)
+{
+	gd_t *gd_ptr;
+
+#ifdef CONFIG_ARM64
+	/*
+	 * Make will already error that reserving x18 is not supported at the
+	 * time of writing, clang: error: unknown argument: '-ffixed-x18'
+	 */
+	__asm__ volatile("mov %0, x18\n" : "=r" (gd_ptr));
+#else
+	__asm__ volatile("mov %0, r9\n" : "=r" (gd_ptr));
+#endif
+
+	return gd_ptr;
+}
+
+#else
+
 #ifdef CONFIG_ARM64
 #define DECLARE_GLOBAL_DATA_PTR		register volatile gd_t *gd asm ("x18")
 #else
 #define DECLARE_GLOBAL_DATA_PTR		register volatile gd_t *gd asm ("r9")
+#endif
 #endif
 
 #endif /* __ASM_GBL_DATA_H */

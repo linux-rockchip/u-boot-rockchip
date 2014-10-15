@@ -22,7 +22,9 @@
 #include <malloc.h>
 #include "rk_hdmi.h"
 #include <lcd.h>
+#include <common.h>
 #include <../board/rockchip/common/config.h>
+#include "rk30_tve.h"
 
 #define PARTITION_NAME "baseparamer"
 #define DEFAULT_MODE   15 
@@ -31,14 +33,20 @@
 #define OUT_P888 0 
 #endif
 short g_hdmi_vic = -1;
+static struct baseparamer_pos g_pos_baseparamer = {-1, -1};
+
 //struct hdmi_dev *hdmi = NULL;
 
 //#define HDMIDEBUG
-
+#ifdef CONFIG_RK30_TVE
+#include <linux/fb.h>
+extern struct fb_videomode rk30_cvbs_mode [MAX_TVE_COUNT];
+extern int g_tve_pos;
+#endif
 
 static const struct hdmi_video_timing hdmi_mode [] = {
 		//name			refresh		xres	yres	pixclock	h_bp	h_fp	v_bp	v_fp	h_pw	v_pw	polariry			                            PorI	flag	vic		2ndvic		               pixelrepeat	interface
-#ifdef CONFIG_RK_3036_HDMI
+#ifdef CONFIG_RK30_HDMI
 	{ { "720x480i@60Hz",    60,	    720,    480,    27000000,   57,     19,     15,     4,      62,     3,		0,				                                1,      0   },  6,      HDMI_720x480i_60HZ_16_9,    0,          OUT_P888},
 	{ { "720x576i@50Hz",    50,	    720,	576,	27000000,	69,	    12,	    19,	    2,	    63,	    3,		0,				                                1,	    0   },  21,     HDMI_720x576i_50HZ_16_9,    0,          OUT_P888}, 
 #endif
@@ -49,7 +57,7 @@ static const struct hdmi_video_timing hdmi_mode [] = {
 	{ {	"1280x720p@30Hz",	30,		1280,	720,	74250000,	220,	1760,	20,	    5,	    40,	    5,	    FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,	0,	    0	},	62,	    HDMI_1280x720p_30HZ_4_3,	1,		    OUT_P888},
 	{ {	"1280x720p@50Hz",	50,		1280,	720,	74250000,	220,	440,	20,	    5,	    40,	    5,	    FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,	0,	    0	},	19,  	HDMI_1280x720p_50HZ_4_3,	1,		    OUT_P888},
 	{ {	"1280x720p@60Hz",	60,		1280,	720,	74250000,	220,	110,	20,	    5,	    40,	    5,	    FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,	0,	    0	},	4,  	HDMI_1280x720p_60HZ_4_3,	1,		    OUT_P888},
-#ifdef CONFIG_RK_3036_HDMI
+#ifdef CONFIG_RK30_HDMI
 	{ { "1920x1080i@50Hz",	50,	    1920,   1080,   74250000,   148,    528,    15,     2,      44,     5,      FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,	1,	    0   },  20,     HDMI_1920x1080i_50HZ,	    1,		    OUT_P888},
 	{ { "1920x1080i@60Hz",	60,	    1920,   1080,   74250000,   148,    88,     15,     2,      44,     5,      FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,	1,	    0   },  5,      HDMI_1920x1080i_60HZ,	    1,		    OUT_P888},
 #endif
@@ -58,7 +66,7 @@ static const struct hdmi_video_timing hdmi_mode [] = {
 	{ {	"1920x1080p@30Hz",	30,		1920,	1080,	74250000,	148,	88,	    36,	    4,	    44,	    5,	    FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,	0,	    0	},	34,	    HDMI_1920x1080p_30HZ_4_3,	1,		    OUT_P888},
 	{ {	"1920x1080p@50Hz",	50,		1920,	1080,	148500000,	148,	528,	36,	    4,	    44,	    5,	    FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,	0,	    0	},	31,  	HDMI_1920x1080p_50HZ_4_3,	1,		    OUT_P888},
 	{ {	"1920x1080p@60Hz",	60,		1920,	1080,	148500000,	148,	88,	    36,	    4,	    44,	    5,	    FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,	0,	    0	},	16,  	HDMI_1920x1080p_60HZ_4_3,	1,		    OUT_P888},		
-#ifdef CONFIG_RK_3288_HDMI
+#ifdef CONFIG_RK32_HDMI
 	{ {	"3840x2160p@24Hz",	24,		3840,	2160,	297000000,	296,	1276,	72,	    8,	    88,	    10,	    FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,	0,	    0	},	93,	    HDMI_3840x2160p_24HZ_4_3,	1,		    OUT_P888},
 	{ {	"3840x2160p@25Hz",	25,		3840,	2160,	297000000,	296,	1056,	72,	    8,	    88,	    10,	    FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,	0,	    0	},	94,	    HDMI_3840x2160p_25HZ_4_3,	1,		    OUT_P888},
 	{ {	"3840x2160p@30Hz", 	30,		3840,	2160,	297000000,	296,	176,	72,	    8,	    88,	    10,	    FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,	0,	    0	},	95,	    HDMI_3840x2160p_30HZ_4_3,	1,		    OUT_P888},
@@ -202,7 +210,6 @@ static int inline read_deviceinfo_storage(struct hdmi_dev *hdmi_dev)
 		memcpy(p_deviceinfo, deviceinfo_buf, sizeof(deviceinfo_buf));
 	}
 
-	
 #if 0
 		p = p_deviceinfo;
 		for(i=0; i<4096; i++)
@@ -215,7 +222,6 @@ static int inline read_deviceinfo_storage(struct hdmi_dev *hdmi_dev)
 		printf("\n\n");
 #endif
 
-
 err:
 	return ret;
 }
@@ -224,9 +230,9 @@ err:
 /*
  * return preset res position
  */
-static int inline read_baseparamer_storage(struct hdmi_dev *hdmi_dev) 
+static int inline read_baseparamer_storage(struct hdmi_dev *hdmi_dev, struct baseparamer_pos *id)
 {
-	int i, ret = -1;
+	int i, ret = 0;
 	const disk_partition_t* ptn_baseparamer;
 	char baseparamer_buf[8 * RK_BLK_SIZE];
 	char *p_baseparamer =  CONFIG_RAM_PHY_START + CONFIG_RAM_PHY_SIZE + 0x1000;//4K
@@ -253,29 +259,56 @@ static int inline read_baseparamer_storage(struct hdmi_dev *hdmi_dev)
 
 		memcpy(p_baseparamer, baseparamer_buf, sizeof(baseparamer_buf));
 
-		memcpy(&hdmi_dev->base_paramer.xres, &baseparamer_buf[0], sizeof(hdmi_dev->base_paramer.xres));
-		memcpy(&hdmi_dev->base_paramer.yres, &baseparamer_buf[4], sizeof(hdmi_dev->base_paramer.yres));
-		memcpy(&hdmi_dev->base_paramer.interlaced, &baseparamer_buf[8], sizeof(hdmi_dev->base_paramer.interlaced));
-		memcpy(&hdmi_dev->base_paramer.type, &baseparamer_buf[12], sizeof(hdmi_dev->base_paramer.type));
-		memcpy(&hdmi_dev->base_paramer.refresh, &baseparamer_buf[16], sizeof(hdmi_dev->base_paramer.refresh));
+		memcpy(&hdmi_dev->base_paramer_hdmi.xres, &baseparamer_buf[0], sizeof(hdmi_dev->base_paramer_hdmi.xres));
+		memcpy(&hdmi_dev->base_paramer_hdmi.yres, &baseparamer_buf[4], sizeof(hdmi_dev->base_paramer_hdmi.yres));
+		memcpy(&hdmi_dev->base_paramer_hdmi.interlaced, &baseparamer_buf[8], sizeof(hdmi_dev->base_paramer_hdmi.interlaced));
+		memcpy(&hdmi_dev->base_paramer_hdmi.type, &baseparamer_buf[12], sizeof(hdmi_dev->base_paramer_hdmi.type));
+		memcpy(&hdmi_dev->base_paramer_hdmi.refresh, &baseparamer_buf[16], sizeof(hdmi_dev->base_paramer_hdmi.refresh));
 
 		
 		for (i = 0; i < hdmi_dev->mode_len; i++) {
-			if (hdmi_dev->base_paramer.xres == hdmi_dev->modedb[i].mode.xres &&
-					hdmi_dev->base_paramer.yres == hdmi_dev->modedb[i].mode.yres &&
-					   hdmi_dev->base_paramer.refresh == hdmi_dev->modedb[i].mode.refresh &&
-					    hdmi_dev->base_paramer.interlaced == hdmi_dev->modedb[i].mode.vmode)
+			if (hdmi_dev->base_paramer_hdmi.xres == hdmi_dev->modedb[i].mode.xres &&
+					hdmi_dev->base_paramer_hdmi.yres == hdmi_dev->modedb[i].mode.yres &&
+					   hdmi_dev->base_paramer_hdmi.refresh == hdmi_dev->modedb[i].mode.refresh &&
+					    hdmi_dev->base_paramer_hdmi.interlaced == hdmi_dev->modedb[i].mode.vmode)
 				break;
 		}
 
 		if (i != hdmi_dev->mode_len) {
-			printf("preset display resolution is %dx%d@%d-%d,i=%d\n", hdmi_dev->base_paramer.xres, hdmi_dev->base_paramer.yres, hdmi_dev->base_paramer.refresh, hdmi_dev->base_paramer.interlaced, i);
-			ret = i;
+			printf("preset hdmi resolution is %dx%d@%d-%d,i=%d\n", hdmi_dev->base_paramer_hdmi.xres, hdmi_dev->base_paramer_hdmi.yres, hdmi_dev->base_paramer_hdmi.refresh, hdmi_dev->base_paramer_hdmi.interlaced, i);
+			id->hdmi_pos = i;
 		}
 		else
 		{
-			printf("baseparamer %dx%d@%d-%d\n", hdmi_dev->base_paramer.xres, hdmi_dev->base_paramer.yres, hdmi_dev->base_paramer.refresh, hdmi_dev->base_paramer.interlaced);
+			printf("hdmi baseparamer %dx%d@%d-%d\n", hdmi_dev->base_paramer_hdmi.xres, hdmi_dev->base_paramer_hdmi.yres, hdmi_dev->base_paramer_hdmi.refresh, hdmi_dev->base_paramer_hdmi.interlaced);
 		}
+
+
+		memcpy(&hdmi_dev->base_paramer_tve.xres, &baseparamer_buf[24+0], sizeof(hdmi_dev->base_paramer_tve.xres));
+                memcpy(&hdmi_dev->base_paramer_tve.yres, &baseparamer_buf[24+4], sizeof(hdmi_dev->base_paramer_tve.yres));
+                memcpy(&hdmi_dev->base_paramer_tve.interlaced, &baseparamer_buf[24+8], sizeof(hdmi_dev->base_paramer_tve.interlaced));
+                memcpy(&hdmi_dev->base_paramer_tve.type, &baseparamer_buf[24+12], sizeof(hdmi_dev->base_paramer_tve.type));
+                memcpy(&hdmi_dev->base_paramer_tve.refresh, &baseparamer_buf[24+16], sizeof(hdmi_dev->base_paramer_tve.refresh));
+
+#ifdef CONFIG_RK30_TVE
+                for (i = 0; i < MAX_TVE_COUNT; i++) {
+                        if (hdmi_dev->base_paramer_tve.xres == rk30_cvbs_mode[i].xres &&
+                                        hdmi_dev->base_paramer_tve.yres == rk30_cvbs_mode[i].yres &&
+                                           hdmi_dev->base_paramer_tve.refresh == rk30_cvbs_mode[i].refresh &&
+                                            hdmi_dev->base_paramer_tve.interlaced == rk30_cvbs_mode[i].vmode)
+                                break;
+                }
+
+                if (i != MAX_TVE_COUNT) {
+                        printf("preset tve resolution is %dx%d@%d-%d,i=%d\n", hdmi_dev->base_paramer_tve.xres, hdmi_dev->base_paramer_tve.yres, hdmi_dev->base_paramer_tve.refresh, hdmi_dev->base_paramer_tve.interlaced, i);
+                        id->tve_pos = i;
+                }
+                else
+                {
+                        printf("tve baseparamer %dx%d@%d-%d\n", hdmi_dev->base_paramer_tve.xres, hdmi_dev->base_paramer_tve.yres, hdmi_dev->base_paramer_tve.refresh, hdmi_dev->base_paramer_tve.interlaced);
+                }
+#endif
+
     }
 	
 #if 0
@@ -1290,7 +1323,7 @@ void hdmi_find_best_mode(struct hdmi_dev *hdmi_dev)
 {
 	int i = 0, pos = 0, pos_baseparamer = 0, pos_edid = 0, pos_default = 0;
 
-	pos_baseparamer = read_baseparamer_storage(hdmi_dev);
+	pos_baseparamer = g_pos_baseparamer.hdmi_pos;
 	if (pos_baseparamer < 0)
 	{
 		pos = hdmi_dev->mode_len;
@@ -1358,6 +1391,11 @@ void rk_hdmi_register(struct hdmi_dev *hdmi_dev, vidinfo_t *panel)
 	ret = read_deviceinfo_storage(hdmi_dev);
 	if(ret)
 	printf("%s:fail to read deviceinfo\n",__func__);
+#endif
+	ret = read_baseparamer_storage(hdmi_dev, &g_pos_baseparamer);
+
+#ifdef CONFIG_RK30_TVE
+	g_tve_pos = g_pos_baseparamer.tve_pos;
 #endif
 
 	if (hdmi_dev->hd_init && !hdmi_dev->hd_init(hdmi_dev)) {

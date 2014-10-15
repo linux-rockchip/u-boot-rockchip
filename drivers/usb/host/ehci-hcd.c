@@ -273,6 +273,29 @@ static inline u8 ehci_encode_speed(enum usb_device_speed speed)
 	return QH_FULL_SPEED;
 }
 
+static void ehci_update_endpt2_dev_n_port(struct usb_device *dev,
+					  struct QH *qh)
+{
+	struct usb_device *ttdev;
+
+	if (dev->speed != USB_SPEED_LOW && dev->speed != USB_SPEED_FULL)
+		return;
+
+	/*
+	 * For full / low speed devices we need to get the devnum and portnr of
+	 * the tt, so of the first upstream usb-2 hub, there may be usb-1 hubs
+	 * in the tree before that one!
+	 */
+	ttdev = dev;
+	while (ttdev->parent && ttdev->parent->speed != USB_SPEED_HIGH)
+		ttdev = ttdev->parent;
+	if (!ttdev->parent)
+		return;
+
+	qh->qh_endpt2 |= cpu_to_hc32(QH_ENDPT2_PORTNUM(ttdev->portnr) |
+				     QH_ENDPT2_HUBADDR(ttdev->parent->devnum));
+}
+
 static int
 ehci_submit_async(struct usb_device *dev, unsigned long pipe, void *buffer,
 		   int length, struct devrequest *req)
@@ -390,10 +413,9 @@ ehci_submit_async(struct usb_device *dev, unsigned long pipe, void *buffer,
 		QH_ENDPT1_ENDPT(usb_pipeendpoint(pipe)) | QH_ENDPT1_I(0) |
 		QH_ENDPT1_DEVADDR(usb_pipedevice(pipe));
 	qh->qh_endpt1 = cpu_to_hc32(endpt);
-	endpt = QH_ENDPT2_MULT(1) | QH_ENDPT2_PORTNUM(dev->portnr) |
-		QH_ENDPT2_HUBADDR(dev->parent->devnum) |
-		QH_ENDPT2_UFCMASK(0) | QH_ENDPT2_UFSMASK(0);
+	endpt = QH_ENDPT2_MULT(1) | QH_ENDPT2_UFCMASK(0) | QH_ENDPT2_UFSMASK(0);
 	qh->qh_endpt2 = cpu_to_hc32(endpt);
+	ehci_update_endpt2_dev_n_port(dev, qh);
 	qh->qh_overlay.qt_next = cpu_to_hc32(QT_NEXT_TERMINATE);
 	qh->qh_overlay.qt_altnext = cpu_to_hc32(QT_NEXT_TERMINATE);
 
@@ -974,6 +996,7 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 	 * Set up periodic list
 	 * Step 1: Parent QH for all periodic transfers.
 	 */
+	ehcic[index].periodic_schedules = 0;
 	periodic = &ehcic[index].periodic_queue;
 	memset(periodic, 0, sizeof(*periodic));
 	periodic->qh_link = cpu_to_hc32(QH_LINK_TERMINATE);
@@ -998,8 +1021,8 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 	if (!ehcic[index].periodic_list)
 		return -ENOMEM;
 	for (i = 0; i < 1024; i++) {
-		ehcic[index].periodic_list[i] = (uint32_t)periodic
-						| QH_LINK_TYPE_QH;
+		ehcic[index].periodic_list[i] = cpu_to_hc32((uint32_t)periodic
+						| QH_LINK_TYPE_QH);
 	}
 
 	flush_dcache_range((uint32_t)ehcic[index].periodic_list,
@@ -1089,7 +1112,7 @@ struct int_queue {
 	struct qTD *tds;
 };
 
-#define NEXT_QH(qh) (struct QH *)((qh)->qh_link & ~0x1f)
+#define NEXT_QH(qh) (struct QH *)(hc32_to_cpu((qh)->qh_link) & ~0x1f)
 
 static int
 enable_periodic(struct ehci_ctrl *ctrl)
@@ -1131,8 +1154,6 @@ disable_periodic(struct ehci_ctrl *ctrl)
 	}
 	return 0;
 }
-
-static int periodic_schedules;
 
 struct int_queue *
 create_int_queue(struct usb_device *dev, unsigned long pipe, int queuesize,
@@ -1184,41 +1205,45 @@ create_int_queue(struct usb_device *dev, unsigned long pipe, int queuesize,
 		struct qTD *td = result->tds + i;
 		void **buf = &qh->buffer;
 
-		qh->qh_link = (uint32_t)(qh+1) | QH_LINK_TYPE_QH;
+		qh->qh_link = cpu_to_hc32((uint32_t)(qh+1) | QH_LINK_TYPE_QH);
 		if (i == queuesize - 1)
-			qh->qh_link = QH_LINK_TERMINATE;
+			qh->qh_link = cpu_to_hc32(QH_LINK_TERMINATE);
 
-		qh->qh_overlay.qt_next = (uint32_t)td;
-		qh->qh_overlay.qt_altnext = QT_NEXT_TERMINATE;
-		qh->qh_endpt1 = (0 << 28) | /* No NAK reload (ehci 4.9) */
+		qh->qh_overlay.qt_next = cpu_to_hc32((uint32_t)td);
+		qh->qh_overlay.qt_altnext = cpu_to_hc32(QT_NEXT_TERMINATE);
+		qh->qh_endpt1 =
+			cpu_to_hc32((0 << 28) | /* No NAK reload (ehci 4.9) */
 			(usb_maxpacket(dev, pipe) << 16) | /* MPS */
 			(1 << 14) |
 			QH_ENDPT1_EPS(ehci_encode_speed(dev->speed)) |
 			(usb_pipeendpoint(pipe) << 8) | /* Endpoint Number */
-			(usb_pipedevice(pipe) << 0);
-		qh->qh_endpt2 = (1 << 30) | /* 1 Tx per mframe */
-			(1 << 0); /* S-mask: microframe 0 */
+			(usb_pipedevice(pipe) << 0));
+		qh->qh_endpt2 = cpu_to_hc32((1 << 30) | /* 1 Tx per mframe */
+			(1 << 0)); /* S-mask: microframe 0 */
 		if (dev->speed == USB_SPEED_LOW ||
 				dev->speed == USB_SPEED_FULL) {
-			debug("TT: port: %d, hub address: %d\n",
-				dev->portnr, dev->parent->devnum);
-			qh->qh_endpt2 |= (dev->portnr << 23) |
-				(dev->parent->devnum << 16) |
-				(0x1c << 8); /* C-mask: microframes 2-4 */
+			/* C-mask: microframes 2-4 */
+			qh->qh_endpt2 |= cpu_to_hc32((0x1c << 8));
 		}
+		ehci_update_endpt2_dev_n_port(dev, qh);
 
-		td->qt_next = QT_NEXT_TERMINATE;
-		td->qt_altnext = QT_NEXT_TERMINATE;
+		td->qt_next = cpu_to_hc32(QT_NEXT_TERMINATE);
+		td->qt_altnext = cpu_to_hc32(QT_NEXT_TERMINATE);
 		debug("communication direction is '%s'\n",
 		      usb_pipein(pipe) ? "in" : "out");
-		td->qt_token = (elementsize << 16) |
+		td->qt_token = cpu_to_hc32((elementsize << 16) |
 			((usb_pipein(pipe) ? 1 : 0) << 8) | /* IN/OUT token */
-			0x80; /* active */
-		td->qt_buffer[0] = (uint32_t)buffer + i * elementsize;
-		td->qt_buffer[1] = (td->qt_buffer[0] + 0x1000) & ~0xfff;
-		td->qt_buffer[2] = (td->qt_buffer[0] + 0x2000) & ~0xfff;
-		td->qt_buffer[3] = (td->qt_buffer[0] + 0x3000) & ~0xfff;
-		td->qt_buffer[4] = (td->qt_buffer[0] + 0x4000) & ~0xfff;
+			0x80); /* active */
+		td->qt_buffer[0] =
+		    cpu_to_hc32((uint32_t)buffer + i * elementsize);
+		td->qt_buffer[1] =
+		    cpu_to_hc32((td->qt_buffer[0] + 0x1000) & ~0xfff);
+		td->qt_buffer[2] =
+		    cpu_to_hc32((td->qt_buffer[0] + 0x2000) & ~0xfff);
+		td->qt_buffer[3] =
+		    cpu_to_hc32((td->qt_buffer[0] + 0x3000) & ~0xfff);
+		td->qt_buffer[4] =
+		    cpu_to_hc32((td->qt_buffer[0] + 0x4000) & ~0xfff);
 
 		*buf = buffer + i * elementsize;
 	}
@@ -1241,7 +1266,7 @@ create_int_queue(struct usb_device *dev, unsigned long pipe, int queuesize,
 	/* hook up to periodic list */
 	struct QH *list = &ctrl->periodic_queue;
 	result->last->qh_link = list->qh_link;
-	list->qh_link = (uint32_t)result->first | QH_LINK_TYPE_QH;
+	list->qh_link = cpu_to_hc32((uint32_t)result->first | QH_LINK_TYPE_QH);
 
 	flush_dcache_range((uint32_t)result->last,
 			   ALIGN_END_ADDR(struct QH, result->last, 1));
@@ -1252,7 +1277,7 @@ create_int_queue(struct usb_device *dev, unsigned long pipe, int queuesize,
 		debug("FATAL: periodic should never fail, but did");
 		goto fail3;
 	}
-	periodic_schedules++;
+	ctrl->periodic_schedules++;
 
 	debug("Exit create_int_queue\n");
 	return result;
@@ -1271,6 +1296,7 @@ fail1:
 void *poll_int_queue(struct usb_device *dev, struct int_queue *queue)
 {
 	struct QH *cur = queue->current;
+	struct qTD *cur_td;
 
 	/* depleted queue */
 	if (cur == NULL) {
@@ -1278,20 +1304,21 @@ void *poll_int_queue(struct usb_device *dev, struct int_queue *queue)
 		return NULL;
 	}
 	/* still active */
-	invalidate_dcache_range((uint32_t)cur,
-				ALIGN_END_ADDR(struct QH, cur, 1));
-	if (cur->qh_overlay.qt_token & 0x80) {
-		debug("Exit poll_int_queue with no completed intr transfer. "
-		      "token is %x\n", cur->qh_overlay.qt_token);
+	cur_td = &queue->tds[queue->current - queue->first];
+	invalidate_dcache_range((uint32_t)cur_td,
+				ALIGN_END_ADDR(struct qTD, cur_td, 1));
+	if (QT_TOKEN_GET_STATUS(hc32_to_cpu(cur_td->qt_token)) &
+			QT_TOKEN_STATUS_ACTIVE) {
+		debug("Exit poll_int_queue with no completed intr transfer. token is %x\n",
+		      hc32_to_cpu(cur_td->qt_token));
 		return NULL;
 	}
 	if (!(cur->qh_link & QH_LINK_TERMINATE))
 		queue->current++;
 	else
 		queue->current = NULL;
-	debug("Exit poll_int_queue with completed intr transfer. "
-	      "token is %x at %p (first at %p)\n", cur->qh_overlay.qt_token,
-	      &cur->qh_overlay.qt_token, queue->first);
+	debug("Exit poll_int_queue with completed intr transfer. token is %x at %p (first at %p)\n",
+	      hc32_to_cpu(cur_td->qt_token), cur, queue->first);
 	return cur->buffer;
 }
 
@@ -1307,15 +1334,17 @@ destroy_int_queue(struct usb_device *dev, struct int_queue *queue)
 		debug("FATAL: periodic should never fail, but did");
 		goto out;
 	}
-	periodic_schedules--;
+	ctrl->periodic_schedules--;
 
 	struct QH *cur = &ctrl->periodic_queue;
 	timeout = get_timer(0) + 500; /* abort after 500ms */
-	while (!(cur->qh_link & QH_LINK_TERMINATE)) {
+	while (!(cur->qh_link & cpu_to_hc32(QH_LINK_TERMINATE))) {
 		debug("considering %p, with qh_link %x\n", cur, cur->qh_link);
 		if (NEXT_QH(cur) == queue->first) {
 			debug("found candidate. removing from chain\n");
 			cur->qh_link = queue->last->qh_link;
+			flush_dcache_range((uint32_t)cur,
+					   ALIGN_END_ADDR(struct QH, cur, 1));
 			result = 0;
 			break;
 		}
@@ -1327,7 +1356,7 @@ destroy_int_queue(struct usb_device *dev, struct int_queue *queue)
 		}
 	}
 
-	if (periodic_schedules > 0) {
+	if (ctrl->periodic_schedules > 0) {
 		result = enable_periodic(ctrl);
 		if (result < 0)
 			debug("FATAL: periodic should never fail, but did");

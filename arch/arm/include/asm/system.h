@@ -78,6 +78,8 @@ void gic_send_sgi(unsigned long sgino);
 void wait_for_wakeup(void);
 void smp_kick_all_cpus(void);
 
+void flush_l3_cache(void);
+
 #endif	/* __ASSEMBLY__ */
 
 #else /* CONFIG_ARM64 */
@@ -183,6 +185,7 @@ enum dcache_option {
 	DCACHE_OFF = 0x12,
 	DCACHE_WRITETHROUGH = 0x1a,
 	DCACHE_WRITEBACK = 0x1e,
+	DCACHE_WRITEALLOC = 0x16,
 };
 
 /* Size of an MMU section */

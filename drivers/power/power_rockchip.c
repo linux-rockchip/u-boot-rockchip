@@ -18,6 +18,7 @@ static const char * const fg_names[] = {
 	"RICOH619_FG",
 	"RK818_FG",
 	"RT5025_FG",
+	"RK-ADC-FG",
 	"RT5036_FG",
 };
 
@@ -26,8 +27,8 @@ static void set_rockchip_pmic_id(unsigned char id)
 {
 	rockchip_pmic_id = id;
 	/********set APLL CLK 600M***********/
-	#if ((CONFIG_RKCHIPTYPE == CONFIG_RK3126) || (CONFIG_RKCHIPTYPE == CONFIG_RK3128))
-	rkclk_set_pll_by_id(APLL_ID,600);
+	#if (defined(CONFIG_RKCHIP_RK3126) || defined(CONFIG_RKCHIP_RK3128))
+	rkclk_set_pll_rate_by_id(APLL_ID, 600);
 	#endif
 	/**********************************/
 }
@@ -43,7 +44,6 @@ int get_power_bat_status(struct battery *battery)
 	int i;
 	struct pmic *p_fg = NULL;
 	for (i = 0; i < ARRAY_SIZE(fg_names); i++) {
-		
 		p_fg = pmic_get(fg_names[i]);
 		if (p_fg)
 			break;
@@ -54,6 +54,7 @@ int get_power_bat_status(struct battery *battery)
 		if (p_fg->fg->fg_battery_update)
 			p_fg->fg->fg_battery_update(p_fg, p_fg);
 	} else {
+		printf("no fuel gauge found\n");
 		return -ENODEV;
 	}
 
@@ -203,6 +204,14 @@ int fg_init(unsigned char bus)
 		printf("fg:cw201x\n");
 		return 0;
 	}
+#endif
+#if defined(CONFIG_POWER_FG_ADC)
+	ret = adc_battery_init();
+	if (ret >= 0) {
+		printf("fg:adc-battery\n");
+		return 0;
+	}
+
 #endif
 	return 0;
 }

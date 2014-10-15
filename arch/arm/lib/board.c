@@ -278,7 +278,7 @@ void board_init_f(ulong bootflag)
 	gd->mon_len = (ulong)&__bss_end - (ulong)_start;
 #ifdef CONFIG_OF_EMBED
 	/* Get a pointer to the FDT */
-	gd->fdt_blob = __dtb_db_begin;
+	gd->fdt_blob = __dtb_dt_begin;
 #elif defined CONFIG_OF_SEPARATE
 	/* FDT is at end of image */
 	gd->fdt_blob = &_end;
@@ -371,24 +371,29 @@ void board_init_f(ulong bootflag)
 	/* round down to next 4 kB limit */
 	addr &= ~(4096 - 1);
 	/* reserve rk global buffers */
-	addr -= CONFIG_RK_EXTRA_BUFFER_SIZE;
+	addr -= CONFIG_RK_GLOBAL_BUFFER_SIZE;
+	gd->arch.rk_global_buf_addr = addr;
+	debug("Reserving %dk for rk global buffer at %08lx\n",
+			CONFIG_RK_GLOBAL_BUFFER_SIZE >> 10, addr);
 
-	gd->arch.rk_extra_buf_addr = addr;
-	debug("Reserving %dk for rk global buffers at %08lx\n",
-			CONFIG_RK_EXTRA_BUFFER_SIZE >> 10, addr);
+	/* reserve rk boot buffers */
+	addr &= ~(4096 - 1);
+	addr -= CONFIG_RK_BOOT_BUFFER_SIZE;
+	gd->arch.rk_boot_buf_addr = addr;
+
+	debug("Reserving %dk for rk boot buffer at %08lx\n",
+			CONFIG_RK_BOOT_BUFFER_SIZE >> 10, gd->arch.rk_boot_buf_addr);
 #endif
 
 #ifdef CONFIG_CMD_FASTBOOT
 	/* reserve fastboot transfer buffer */
 #ifdef CONFIG_ROCKCHIP
-	//use rk_extra_buf for fbt buffer.
-	gd->arch.fastboot_buf_addr = gd->arch.rk_extra_buf_addr + CONFIG_RK_GLOBAL_BUFFER_SIZE;
-
-	debug("Reserving %dk for fastboot transfer buffer at %08lx\n",
-			CONFIG_FASTBOOT_TRANSFER_BUFFER_SIZE >> 10, gd->arch.fastboot_buf_addr);
+	/* using rk boot buffer for fbt buffer */
+	gd->arch.fastboot_buf_addr = gd->arch.rk_boot_buf_addr;
+	debug("Using rk boot buffer as Fastboot transfer buffer.\n");
 #else
+	addr &= ~(4096 - 1);
 	addr -= CONFIG_FASTBOOT_TRANSFER_BUFFER_SIZE;
-
 	gd->arch.fastboot_buf_addr = addr;
 	debug("Reserving %dk for fastboot transfer buffer at %08lx\n",
 			CONFIG_FASTBOOT_TRANSFER_BUFFER_SIZE >> 10, addr);
@@ -486,7 +491,6 @@ void board_init_f(ulong bootflag)
 	post_run(NULL, POST_ROM | post_bootmode_get(0));
 #endif
 
-	gd->bd->bi_baudrate = gd->baudrate;
 	/* Ram ist board specific, so move it to board code ... */
 	dram_init_banksize();
 	display_dram_config();	/* and display it */

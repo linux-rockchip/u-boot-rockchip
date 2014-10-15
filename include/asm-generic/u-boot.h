@@ -66,7 +66,6 @@ typedef struct bd_info {
 	unsigned long	bi_ipbfreq;	/* IPB Bus Freq, in MHz */
 	unsigned long	bi_pcifreq;	/* PCI Bus Freq, in MHz */
 #endif
-	unsigned int	bi_baudrate;	/* Console Baudrate */
 #if defined(CONFIG_405)   || \
 		defined(CONFIG_405GP) || \
 		defined(CONFIG_405EP) || \
@@ -108,9 +107,6 @@ typedef struct bd_info {
 	unsigned int	bi_opbfreq;		/* OPB clock in Hz */
 	int		bi_iic_fast[2];		/* Use fast i2c mode */
 #endif
-#if defined(CONFIG_NX823)
-	unsigned char	bi_sernum[8];
-#endif
 #if defined(CONFIG_4xx)
 #if defined(CONFIG_440GX) || \
 		defined(CONFIG_460EX) || defined(CONFIG_460GT)
@@ -132,6 +128,13 @@ typedef struct bd_info {
 		ulong size;
 	} bi_dram[CONFIG_NR_DRAM_BANKS];
 #endif /* CONFIG_NR_DRAM_BANKS */
+#ifdef CONFIG_RK_MAX_DRAM_BANKS
+	struct            	/* RAM configuration for kernel */
+	{
+		u64 start;
+		u64 size;
+	} rk_dram[CONFIG_RK_MAX_DRAM_BANKS + 1];
+#endif /* CONFIG_RK_MAX_DRAM_BANKS */
 } bd_t;
 
 #endif /* __ASSEMBLY__ */

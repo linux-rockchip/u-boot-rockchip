@@ -209,7 +209,7 @@ int board_init(void)
 	/* Set Initial global variables */
 
 	gd->bd->bi_arch_number = MACH_TYPE_RK30XX;
-	gd->bd->bi_boot_params = PHYS_SDRAM_1 + 0x88000;
+	gd->bd->bi_boot_params = PHYS_SDRAM + 0x88000;
 
 	return 0;
 }
@@ -276,7 +276,7 @@ int board_late_init(void)
 	SecureBootCheck();
 
 	//TODO:set those buffers in a better way, and use malloc?
-	rkidb_setup_space(gd->arch.rk_extra_buf_addr);
+	rkidb_setup_space(gd->arch.rk_global_buf_addr);
 
 	/* after setup space, get id block data first */
 	rkidb_get_idblk_data();

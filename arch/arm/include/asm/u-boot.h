@@ -27,7 +27,6 @@
 
 #ifndef __ASSEMBLY__
 typedef struct bd_info {
-	unsigned int	bi_baudrate;	/* serial console baudrate */
     ulong	        bi_arch_number;	/* unique id for this board */
     ulong	        bi_boot_params;	/* where this board expects params */
 	unsigned long	bi_arm_freq; /* arm frequency */
@@ -41,10 +40,10 @@ typedef struct bd_info {
 
 #ifdef CONFIG_RK_MAX_DRAM_BANKS
     struct            	/* RAM configuration for kernel */
-	{
-		u64 start;
-		u64 size;
-	} 			rk_dram[CONFIG_RK_MAX_DRAM_BANKS + 1];
+    {
+	u64 start;
+	u64 size;
+    } 			rk_dram[CONFIG_RK_MAX_DRAM_BANKS + 1];
 #endif /* CONFIG_RK_MAX_DRAM_BANKS */
 
 } bd_t;

@@ -6,6 +6,7 @@
  *	Copyright 2000 Roland Borde
  *	Copyright 2000 Paolo Scaffardi
  *	Copyright 2000-2002 Wolfgang Denk, wd@denx.de
+ *	SPDX-License-Identifier:	GPL-2.0
  */
 
 /*
@@ -385,14 +386,14 @@ restart:
 #endif
 #if defined(CONFIG_CMD_DHCP)
 		case DHCP:
-			BootpTry = 0;
+			BootpReset();
 			NetOurIP = 0;
 			DhcpRequest();		/* Basically same as BOOTP */
 			break;
 #endif
 
 		case BOOTP:
-			BootpTry = 0;
+			BootpReset();
 			NetOurIP = 0;
 			BootpRequest();
 			break;
@@ -419,7 +420,7 @@ restart:
 			CDPStart();
 			break;
 #endif
-#ifdef CONFIG_NETCONSOLE
+#if defined (CONFIG_NETCONSOLE) && !(CONFIG_SPL_BUILD)
 		case NETCONS:
 			NcStart();
 			break;
@@ -1182,7 +1183,7 @@ NetReceive(uchar *inpkt, int len)
 #endif
 
 
-#ifdef CONFIG_NETCONSOLE
+#if defined (CONFIG_NETCONSOLE) && !(CONFIG_SPL_BUILD)
 		nc_input_packet((uchar *)ip + IP_UDP_HDR_SIZE,
 					src_ip,
 					ntohs(ip->udp_dst),

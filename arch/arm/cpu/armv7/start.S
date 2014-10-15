@@ -21,39 +21,45 @@
 
 
 #ifdef CONFIG_ROCKCHIP
+/*
+ *************************************************************************
+ *
+ * Exception vectors as described in ARM reference manuals
+ *
+ * Uses indirect branch to allow reaching handlers anywhere in memory.
+ *
+ *************************************************************************
+ */
 .globl _start
+.globl RSA_KEY_TAG
+.globl RSA_KEY_LENGTH
+.globl RSA_KEY_DATA
+.globl LoaderTagCheck
+
 _start:
-	msr cpsr_c, #0xd3 
-        b _vector
+
+	msr	cpsr_c, #0xd3
+        b	_vector
 
 /* For rockchip rsa key */
-.globl RSA_KEY_TAG
 RSA_KEY_TAG:
 	.word	0x4B415352
 
-.globl RSA_KEY_LENGTH
 RSA_KEY_LENGTH:
 	.word	0x200-0x08
 
-.globl RSA_KEY_DATA
 RSA_KEY_DATA:
 	.space	0x200-0x08
 
-.globl LoaderTagCheck
 LoaderTagCheck:
 	.word	0x4B415351
 
-.globl RSA_PAD
 RSA_PAD:
 	.space	20
 
 	.align	5
-.globl _vector
-_vector: b	reset
-#else
-.globl _start
-_start: b	reset
-#endif /* CONFIG_ROCKCHIP */
+_vector:
+	b	reset
 	ldr	pc, _undefined_instruction
 	ldr	pc, _software_interrupt
 	ldr	pc, _prefetch_abort
@@ -61,37 +67,38 @@ _start: b	reset
 	ldr	pc, _not_used
 	ldr	pc, _irq
 	ldr	pc, _fiq
-#ifdef CONFIG_SPL_BUILD
-_undefined_instruction: .word _undefined_instruction
-_software_interrupt:	.word _software_interrupt
-_prefetch_abort:	.word _prefetch_abort
-_data_abort:		.word _data_abort
-_not_used:		.word _not_used
-_irq:			.word _irq
-_fiq:			.word _fiq
-_pad:			.word 0x12345678 /* now 16*4=64 */
-#else
-.globl _undefined_instruction
-_undefined_instruction: .word undefined_instruction
-.globl _software_interrupt
-_software_interrupt:	.word software_interrupt
-.globl _prefetch_abort
-_prefetch_abort:	.word prefetch_abort
-.globl _data_abort
-_data_abort:		.word data_abort
-.globl _not_used
-_not_used:		.word not_used
-.globl _irq
-_irq:			.word irq
-.globl _fiq
-_fiq:			.word fiq
-_pad:			.word 0x12345678 /* now 16*4=64 */
-#endif	/* CONFIG_SPL_BUILD */
 
-.global _end_vect
-_end_vect:
+/*
+ *************************************************************************
+ *
+ * Indirect vectors table
+ *
+ * Symbols referenced here must be defined somewhere else
+ *
+ *************************************************************************
+ */
+
+	.globl	_undefined_instruction
+	.globl	_software_interrupt
+	.globl	_prefetch_abort
+	.globl	_data_abort
+	.globl	_not_used
+	.globl	_irq
+	.globl	_fiq
+
+_undefined_instruction:	.word undefined_instruction
+_software_interrupt:	.word software_interrupt
+_prefetch_abort:	.word prefetch_abort
+_data_abort:		.word data_abort
+_not_used:		.word not_used
+_irq:			.word irq
+_fiq:			.word fiq
 
 	.balignl 16,0xdeadbeef
+
+#endif /* CONFIG_ROCKCHIP */
+
+
 /*************************************************************************
  *
  * Startup Code (reset vector)
@@ -103,26 +110,7 @@ _end_vect:
  *
  *************************************************************************/
 
-#ifdef CONFIG_USE_IRQ
-/* IRQ stack memory (calculated at run-time) */
-.globl IRQ_STACK_START
-IRQ_STACK_START:
-	.word	0x0badc0de
-
-/* IRQ stack memory (calculated at run-time) */
-.globl FIQ_STACK_START
-FIQ_STACK_START:
-	.word	0x0badc0de
-#endif
-
-/* IRQ stack memory (calculated at run-time) + 8 bytes */
-.globl IRQ_STACK_START_IN
-IRQ_STACK_START_IN:
-	.word	0x0badc0de
-
-/*
- * the actual reset code
- */
+	.globl	reset
 
 reset:
 	bl	save_boot_params
@@ -240,7 +228,7 @@ ENTRY(cpu_init_cp15)
 	/*
 	 * Invalidate L2 Latency
 	 */
-#if (CONFIG_RKCHIPTYPE == CONFIG_RK3288)
+#if defined(CONFIG_RKCHIP_RK3288)
 	mrc	p15, 1, r0, c9, c0, 2	@ Read L2 Control Register
 	bic	r0, r0, #0x000000FF	@ clear bit 17:0
 	bic	r0, r0, #0x0000FF00	@ clear bit 17:0
@@ -316,7 +304,8 @@ ENTRY(cpu_init_crit)
 ENDPROC(cpu_init_crit)
 #endif
 
-#ifndef CONFIG_SPL_BUILD
+
+#ifdef CONFIG_ROCKCHIP
 /*
  *************************************************************************
  *
@@ -324,6 +313,43 @@ ENDPROC(cpu_init_crit)
  *
  *************************************************************************
  */
+
+/* SPL interrupt handling: just hang */
+
+#ifdef CONFIG_SPL_BUILD
+
+	.align	5
+undefined_instruction:
+software_interrupt:
+prefetch_abort:
+data_abort:
+not_used:
+irq:
+fiq:
+
+1:
+	bl	1b			/* hang and never return */
+
+#else	/* !CONFIG_SPL_BUILD */
+
+/* IRQ stack memory (calculated at run-time) + 8 bytes */
+.globl IRQ_STACK_START_IN
+IRQ_STACK_START_IN:
+	.word	0x0badc0de
+
+#ifdef CONFIG_USE_IRQ
+/* IRQ stack memory (calculated at run-time) */
+.globl IRQ_STACK_START
+IRQ_STACK_START:
+	.word	0x0badc0de
+
+/* IRQ stack memory (calculated at run-time) */
+.globl FIQ_STACK_START
+FIQ_STACK_START:
+	.word 0x0badc0de
+
+#endif /* CONFIG_USE_IRQ */
+
 @
 @ IRQ stack frame.
 @
@@ -358,34 +384,29 @@ ENDPROC(cpu_init_crit)
  */
 
 	.macro	bad_save_user_regs
-	sub	sp, sp, #S_FRAME_SIZE		@ carve out a frame on current
-						@ user stack
-	stmia	sp, {r0 - r12}			@ Save user registers (now in
-						@ svc mode) r0-r12
-	ldr	r2, IRQ_STACK_START_IN		@ set base 2 words into abort
-						@ stack
-	ldmia	r2, {r2 - r3}			@ get values for "aborted" pc
-						@ and cpsr (into parm regs)
+	@ carve out a frame on current user stack
+	sub	sp, sp, #S_FRAME_SIZE
+	stmia	sp, {r0 - r12}	@ Save user registers (now in svc mode) r0-r12
+	ldr	r2, IRQ_STACK_START_IN
+	@ get values for "aborted" pc and cpsr (into parm regs)
+	ldmia	r2, {r2 - r3}
 	add	r0, sp, #S_FRAME_SIZE		@ grab pointer to old stack
-
 	add	r5, sp, #S_SP
 	mov	r1, lr
-	stmia	r5, {r0 - r3}			@ save sp_SVC, lr_SVC, pc, cpsr
-	mov	r0, sp				@ save current stack into r0
-						@ (param register)
+	stmia	r5, {r0 - r3}	@ save sp_SVC, lr_SVC, pc, cpsr
+	mov	r0, sp		@ save current stack into r0 (param register)
 	.endm
 
 	.macro	irq_save_user_regs
 	sub	sp, sp, #S_FRAME_SIZE
 	stmia	sp, {r0 - r12}			@ Calling r0-r12
-	add	r8, sp, #S_PC			@ !! R8 NEEDS to be saved !!
-						@ a reserved stack spot would
-						@ be good.
-	stmdb	r8, {sp, lr}^			@ Calling SP, LR
-	str	lr, [r8, #0]			@ Save calling PC
+	@ !!!! R8 NEEDS to be saved !!!! a reserved stack spot would be good.
+	add	r8, sp, #S_PC
+	stmdb	r8, {sp, lr}^		@ Calling SP, LR
+	str	lr, [r8, #0]		@ Save calling PC
 	mrs	r6, spsr
-	str	r6, [r8, #4]			@ Save CPSR
-	str	r0, [r8, #8]			@ Save OLD_R0
+	str	r6, [r8, #4]		@ Save CPSR
+	str	r0, [r8, #8]		@ Save OLD_R0
 	mov	r0, sp
 	.endm
 
@@ -394,43 +415,20 @@ ENDPROC(cpu_init_crit)
 	mov	r0, r0
 	ldr	lr, [sp, #S_PC]			@ Get PC
 	add	sp, sp, #S_FRAME_SIZE
-	subs	pc, lr, #4			@ return & move spsr_svc into
-						@ cpsr
+	subs	pc, lr, #4		@ return & move spsr_svc into cpsr
 	.endm
 
 	.macro get_bad_stack
-	ldr	r13, IRQ_STACK_START_IN		@ setup our mode stack (enter
-						@ in banked mode)
+	ldr	r13, IRQ_STACK_START_IN		@ setup our mode stack
 
-	str	lr, [r13]			@ save caller lr in position 0
-						@ of saved stack
-	mrs	lr, spsr			@ get the spsr
-	str	lr, [r13, #4]			@ save spsr in position 1 of
-						@ saved stack
-
-	mov	r13, #MODE_SVC			@ prepare SVC-Mode
+	str	lr, [r13]	@ save caller lr in position 0 of saved stack
+	mrs	lr, spsr	@ get the spsr
+	str	lr, [r13, #4]	@ save spsr in position 1 of saved stack
+	mov	r13, #MODE_SVC	@ prepare SVC-Mode
 	@ msr	spsr_c, r13
-	msr	spsr, r13			@ switch modes, make sure
-						@ moves will execute
-	mov	lr, pc				@ capture return pc
-	movs	pc, lr				@ jump to next instruction &
-						@ switch modes.
-	.endm
-
-	.macro get_bad_stack_swi
-	sub	r13, r13, #4			@ space on current stack for
-						@ scratch reg.
-	str	r0, [r13]			@ save R0's value.
-	ldr	r0, IRQ_STACK_START_IN		@ get data regions start
-						@ spots for abort stack
-	str	lr, [r0]			@ save caller lr in position 0
-						@ of saved stack
-	mrs	lr, spsr			@ get the spsr
-	str	lr, [r0, #4]			@ save spsr in position 1 of
-						@ saved stack
-	ldr	lr, [r0]			@ restore lr
-	ldr	r0, [r13]			@ restore r0
-	add	r13, r13, #4			@ pop stack entry
+	msr	spsr, r13	@ switch modes, make sure moves will execute
+	mov	lr, pc		@ capture return pc
+	movs	pc, lr		@ jump to next instruction & switch modes.
 	.endm
 
 	.macro get_irq_stack			@ setup IRQ stack
@@ -444,7 +442,8 @@ ENDPROC(cpu_init_crit)
 /*
  * exception handlers
  */
-	.align	5
+
+	.align  5
 undefined_instruction:
 	get_bad_stack
 	bad_save_user_regs
@@ -452,7 +451,7 @@ undefined_instruction:
 
 	.align	5
 software_interrupt:
-	get_bad_stack_swi
+	get_bad_stack
 	bad_save_user_regs
 	bl	do_software_interrupt
 
@@ -486,7 +485,7 @@ irq:
 	.align	5
 fiq:
 	get_fiq_stack
-	/* someone ought to write a more effective fiq_save_user_regs */
+	/* someone ought to write a more effiction fiq_save_user_regs */
 	irq_save_user_regs
 	bl	do_fiq
 	irq_restore_user_regs
@@ -506,12 +505,15 @@ fiq:
 	bl	do_fiq
 
 #endif /* CONFIG_USE_IRQ */
-#endif /* CONFIG_SPL_BUILD */
+
+#endif	/* CONFIG_SPL_BUILD */
+#endif /* CONFIG_ROCKCHIP */
 
 
 #ifdef CONFIG_ROCKCHIP
 	.section .loader_tag, "axT"
+
 .globl gloader_tag
 gloader_tag:
 	.word	0x4B415351
-#endif
+#endif /* CONFIG_ROCKCHIP */
