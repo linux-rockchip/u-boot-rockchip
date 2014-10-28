@@ -481,8 +481,6 @@ static bool SecureRKModeVerifyLoader(RK28BOOT_HEAD *hdr)
 	BOOT_HEADER *pKeyHead = (BOOT_HEADER *)keybuf;
 	int i;
 
-	debug("Loader Head: hdr = 0x%x, flash data offset = 0x%x\n", hdr, hdr->uiFlashDataOffset);
-
 	memcpy(keybuf, (void *)hdr + hdr->uiFlashDataOffset, RK_BLK_SIZE * 4);
 	for (i = 0; i < 4; i++) {
 		P_RC4((unsigned char *)keybuf + RK_BLK_SIZE * i, RK_BLK_SIZE);
@@ -546,6 +544,7 @@ static bool SecureRKModeVerifyUbootImage(second_loader_hdr *uboothdr)
 
 	if ((uboothdr->signTag != RK_UBOOT_SIGN_TAG) \
 			&& (uboothdr->hash_len != 20) && (uboothdr->hash_len != 32)) {
+		printf("Second loader is not a signed image!\n");
 		return false;
 	}
 
@@ -602,12 +601,14 @@ static bool SecureRKModeVerifyUbootImage(second_loader_hdr *uboothdr)
 
 	/* check the hash of image */
 	if (memcmp(uboothdr->hash, hwDataHash, uboothdr->hash_len) != 0) {
+		printf("Second loader hash error!\n");
 		return false;
 	}
 
 	/* check the sign of hash */
 	for (i = 0; i < 20; i++) {
 		if (rsahash[19-i] != dataHash[i]) {
+			printf("Second loader sign error!\n");
 			return false;
 		}
 	}
@@ -651,6 +652,7 @@ static bool SecureRKModeVerifyBootImage(rk_boot_img_hdr *boothdr)
 	}
 
 	if (boothdr->signTag != SECURE_BOOT_SIGN_TAG) {
+		printf("%s is not a signed image!\n", boothdr->name);
 		return false;
 	}
 #if 0
@@ -731,12 +733,14 @@ static bool SecureRKModeVerifyBootImage(rk_boot_img_hdr *boothdr)
 
 	/* check the hash of image */
 	if (memcmp(boothdr->id, hwDataHash, sizeof(boothdr->id)) != 0) {
+		printf("%s hash error!\n", boothdr->name);
 		return false;
 	}
 
 	/* check the sign of hash */
 	for (i = 0; i < 20; i++) {
 		if (rsahash[19-i] != dataHash[i]) {
+			printf("%s sign error!\n", boothdr->name);
 			return false;
 		}
 	}
