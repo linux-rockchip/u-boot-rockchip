@@ -34,7 +34,7 @@ DECLARE_GLOBAL_DATA_PTR;
 extern short g_hdmi_vic;
 #endif
 
-#ifdef CONFIG_RK30_TVE
+#ifdef CONFIG_RK3036_TVE
 extern int g_tve_pos;
 #endif
 
@@ -308,7 +308,8 @@ int do_bootrk(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 				 "%s hdmi.vic=%d", command_line, g_hdmi_vic);
 #endif
 
-#ifdef CONFIG_RK30_TVE
+
+#ifdef CONFIG_RK3036_TVE
 		snprintf(command_line, sizeof(command_line),
 				"%s tve.format=%d", command_line, g_tve_pos);
 #endif
