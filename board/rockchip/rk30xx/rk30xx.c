@@ -266,10 +266,31 @@ int dram_init(void)
 	return 0;
 }
 
+#define DDR_BW		(2 >> ((g_pmuReg->PMU_PMU_SYS_REG[2] >>  2) & 0x3))
+#define DDR_ROW_CS1	(13 + ((g_pmuReg->PMU_PMU_SYS_REG[2] >>  4) & 0x3))
+#define DDR_ROW_CS0	(13 + ((g_pmuReg->PMU_PMU_SYS_REG[2] >>  6) & 0x3))
+#define DDR_BANK	( 3 - ((g_pmuReg->PMU_PMU_SYS_REG[2] >>  8) & 0x1))
+#define DDR_COL		( 9 + ((g_pmuReg->PMU_PMU_SYS_REG[2] >>  9) & 0x3))
+#define DDR_CS		( 1 + ((g_pmuReg->PMU_PMU_SYS_REG[2] >> 11) & 0x1))
+
 void dram_init_banksize(void)
 {
 	gd->bd->bi_dram[0].start = PHYS_SDRAM_1;
 	gd->bd->bi_dram[0].size = PHYS_SDRAM_1_SIZE;
+
+	if (g_pmuReg->PMU_PMU_SYS_REG[2]) {
+		debug("DRAM: row=%u col=%u bank=%u bw=%u\n",
+		    DDR_ROW_CS0, DDR_COL, 1U << DDR_BANK, 8U << DDR_BW);
+		gd->bd->bi_dram[0].size =
+		    1U << (DDR_ROW_CS0 + DDR_COL + DDR_BANK + DDR_BW);
+
+		if (DDR_CS > 1) {
+			debug("DRAM: row=%u col=%u bank=%u bw=%u\n",
+			    DDR_ROW_CS1, DDR_COL, 1U << DDR_BANK, 8U << DDR_BW);
+			gd->bd->bi_dram[0].size +=
+			    1U << (DDR_ROW_CS1 + DDR_COL + DDR_BANK + DDR_BW);
+		}
+	}
 }
 
 #ifdef CONFIG_DISPLAY_BOARDINFO
