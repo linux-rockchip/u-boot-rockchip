@@ -468,16 +468,25 @@ typedef enum
     
     typedef volatile struct tagPMU_REG
     {
-        uint32 PMU_WAKEUP_EN0;
-        uint32 PMU_WAKEUP_EN1;
-        uint32 PMU_WAKEUP_EN2;
-        uint32 reserved1;
-        uint32 PMU_PG_CON;
-        uint32 PMU_MISC_CON;
-        uint32 PMU_PLL_CNT;
-        uint32 PMU_PD_ST;
+        uint32 PMU_WAKEUP_CFG[2];
+        uint32 PMU_PWRDN_CON;
+        uint32 PMU_PWRDN_ST;
+        uint32 PMU_INT_CON;
         uint32 PMU_INT_ST;
+        uint32 PMU_MISC_CON;
+        uint32 PMU_OSC_CNT;
+        uint32 PMU_PLL_CNT;
+        uint32 PMU_PMU_CNT;
+        uint32 PMU_DDRIO_PWRON_CNT;
+        uint32 PMU_WAKEUP_RST_CLR_CNT;
+        uint32 PMU_SCU_PWRDWN_CNT;
+        uint32 PMU_SCU_PWRUP_CNT;
+        uint32 PMU_MISC_CON1;
+        uint32 PMU_GPIO6_CON;
+        uint32 PMU_PMU_SYS_REG[4];
     }PMU_REG,*pPMU_REG;
+
+#define g_pmuReg ((pPMU_REG)PMU_BASE_ADDR)
 
     typedef struct tagSCU_CLK_INFO
     {
