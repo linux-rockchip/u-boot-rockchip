@@ -1982,6 +1982,13 @@ int do_booti(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 #endif
 //TODO:add some dev info to cmdline?
 //
+
+		extern int Rk30ChipVerInfo[4];
+		strcat(command_line + amt, " chipver=");
+		amt += 9;
+		strncat(command_line + amt, (char *)Rk30ChipVerInfo, 16);
+		amt += 16;
+
         if (charge)
             snprintf(command_line, sizeof(command_line),
                 "%s %s",command_line," androidboot.mode=charger");
