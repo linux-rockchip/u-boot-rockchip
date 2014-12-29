@@ -461,16 +461,18 @@ void UsbBootLinux(uint32 KernelAddr,uint32 Parameter)
         pfun();
     }
 
-    pKernelImg = (KernelImg *)Parameter;
-    if(pKernelImg->tag == TAG_PARAMETER)
-    {
-        memmove((uint8*)Parameter, (uint8*)(pKernelImg->image), pKernelImg->size);        
-    }
-
     memset(&gBootInfo, 0, sizeof(gBootInfo));
     RkPrintf("analyze parameter\n");
     // 解析参数
-    ParseParam( &gBootInfo, (char *)Parameter, 512);
+    pKernelImg = (KernelImg *)Parameter;
+    if(pKernelImg->tag == TAG_PARAMETER)
+    {
+        ParseParam( &gBootInfo, (char *)pKernelImg->image, pKernelImg->size);
+    }
+    else
+    {
+        ParseParam( &gBootInfo, (char *)Parameter, 512);
+    }
 
     // 在cmdline末尾添加loader版本信息(从IDBlock获取)
     strcat(gBootInfo.cmd_line, " bootver=");
