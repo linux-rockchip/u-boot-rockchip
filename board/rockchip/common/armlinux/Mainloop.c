@@ -482,9 +482,10 @@ void UsbBootLinux(uint32 KernelAddr,uint32 Parameter)
     strcat(gBootInfo.cmd_line, " firmware_ver=");
     strcat(gBootInfo.cmd_line, gBootInfo.fw_version);
 
-    extern uint32 Rk30ChipVerInfo[4];
+    ChipTypeCheck();
+    extern char Rk30ChipVerStr[17];
     strcat(gBootInfo.cmd_line, " chipver=");
-    strncat(gBootInfo.cmd_line, (char *)Rk30ChipVerInfo, 16);
+    strcat(gBootInfo.cmd_line, Rk30ChipVerStr);
 
     setenv("bootargs", gBootInfo.cmd_line);
 

@@ -73,43 +73,47 @@ void DRVDelayS(uint32 count)
 
 uint8  ChipType;
 uint32 Rk30ChipVerInfo[4];  
+char   Rk30ChipVerStr[17];
 void ChipTypeCheck(void)
 {
     Rk30ChipVerInfo[0] = 0;
-#if(CONFIG_RKCHIPTYPE == CONFIG_RK3188)
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3188) || (CONFIG_RKCHIPTYPE == CONFIG_RK3188B) || (CONFIG_RKCHIPTYPE == CONFIG_RK3188T)
     ftl_memcpy(Rk30ChipVerInfo, (uint8*)(BOOT_ROM_CHIP_VER_ADDR + 0x20000), 16);
 #else
     ftl_memcpy(Rk30ChipVerInfo, (uint8*)(BOOT_ROM_CHIP_VER_ADDR), 16);
 #endif
+
+    int i, j;
+    for (i = 0; i < 4; i++)
+        for (j = 0; j < 4; j++)
+            Rk30ChipVerStr[i * 4 + j] = (Rk30ChipVerInfo[i] >> (24 - j * 8)) & 0xff;
+    Rk30ChipVerStr[16] = '\0';
     
     ChipType = CONFIG_RK3066;
-    if(Rk30ChipVerInfo[0]== 0x33303042&&Rk30ChipVerInfo[3] == 0x56313030) 
+
+    if(Rk30ChipVerInfo[0] == 0x33303042 && Rk30ChipVerInfo[3] == 0x56313030) 
     {
         ChipType = CONFIG_RK3168;
     }
     
-    if(Rk30ChipVerInfo[0]== 0x33303041&& Rk30ChipVerInfo[3] == 0x56313030) 
+    if(Rk30ChipVerInfo[0] == 0x33303041 && Rk30ChipVerInfo[3] == 0x56313030) 
     {
         ChipType = CONFIG_RK3066B;
         Rk30ChipVerInfo[0] =  0x33313041; // "310A"
     }
 
-    if(Rk30ChipVerInfo[0]== 0x33313042&& Rk30ChipVerInfo[3] == 0x56313030) 
+    if(Rk30ChipVerInfo[0] == 0x33313042 && Rk30ChipVerInfo[3] == 0x56313030) 
     {
         ChipType = CONFIG_RK3188;
     }
-#if(CONFIG_RKCHIPTYPE == CONFIG_RK3188)
-    ChipType = CONFIG_RK3188;
 
-    if(Rk30ChipVerInfo[0]== 0x33313042&& Rk30ChipVerInfo[3] == 0x56313031) 
+    if(Rk30ChipVerInfo[0] == 0x33313042 && Rk30ChipVerInfo[3] == 0x56313031) 
     {
         ChipType = CONFIG_RK3188B;
     }
-	
-#endif
-#if(CONFIG_RKCHIPTYPE == CONFIG_RK3026)
+
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3026)
     ChipType = CONFIG_RK3026;
-	
 #endif
 }
 
