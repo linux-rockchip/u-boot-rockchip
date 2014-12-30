@@ -1983,11 +1983,10 @@ int do_booti(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 //TODO:add some dev info to cmdline?
 //
 
-		extern int Rk30ChipVerInfo[4];
-		strcat(command_line + amt, " chipver=");
-		amt += 9;
-		strncat(command_line + amt, (char *)Rk30ChipVerInfo, 16);
-		amt += 16;
+		ChipTypeCheck();
+		extern char Rk30ChipVerStr[17];
+		amt += snprintf(command_line + amt, sizeof(command_line) - amt,
+		    " chipver=%s", Rk30ChipVerStr);
 
         if (charge)
             snprintf(command_line, sizeof(command_line),
