@@ -219,22 +219,29 @@ int arch_cpu_init(void)
 #ifdef CONFIG_DISPLAY_CPUINFO
 int print_cpuinfo(void)
 {
-#if (CONFIG_RKCHIPTYPE == CONFIG_RK3066)
-	printf("CPU:\tRK3066\n");
-#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3066B)
-     printf("CPU:\tRK3066B\n");
-#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3168)
-     printf("CPU:\tRK3168\n");
-#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3188)
-     printf("CPU:\tRK3188\n");
-#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3188B)
-     printf("CPU:\tRK3188B\n");
-#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3188T)
-     printf("CPU:\tRK3188T\n");
-#elif (CONFIG_RKCHIPTYPE == CONFIG_RK3026)
-     printf("CPU:\tRK3026\n");
+	ChipTypeCheck();
+
+	extern char Rk30ChipVerStr[17];
+	printf("ChipVer: %s\n", Rk30ChipVerStr);
+
+	if (ChipType == CONFIG_RK3066)
+		printf("CPU:\tRK3066\n");
+	else if (ChipType == CONFIG_RK3066B)
+		printf("CPU:\tRK3066B\n");
+	else if (ChipType == CONFIG_RK3168)
+		printf("CPU:\tRK3168\n");
+	else if (ChipType == CONFIG_RK3188)
+#if (CONFIG_RKCHIPTYPE == CONFIG_RK3188T)
+		printf("CPU:\tRK3188T\n");
+#else
+		printf("CPU:\tRK3188\n");
 #endif
-     return 0;
+	else if (ChipType == CONFIG_RK3188B)
+		printf("CPU:\tRK3188+\n");
+	else if (ChipType == CONFIG_RK3026)
+		printf("CPU:\tRK3026\n");
+
+	return 0;
 }
 #endif
 
