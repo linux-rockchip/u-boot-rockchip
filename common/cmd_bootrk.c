@@ -254,7 +254,8 @@ static rk_boot_img_hdr * rk_load_image_from_storage(const disk_partition_t* ptn,
 	}
 	if (!content.load_addr) {
 		printf("failed to load fdt!\n");
-		goto fail;
+		pimage->ft_addr = 0;
+		pimage->ft_len = 0;
 	} else {
 		pimage->ft_addr = content.load_addr;
 		pimage->ft_len = content.content_size;
