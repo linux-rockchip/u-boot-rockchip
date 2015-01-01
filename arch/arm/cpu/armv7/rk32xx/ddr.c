@@ -44,6 +44,9 @@ int dram_init(void)
 
 void dram_init_banksize(void)
 {
+	gd->bd->bi_dram[0].start = PHYS_SDRAM;
+	gd->bd->bi_dram[0].size = PHYS_SDRAM_SIZE;
+
 #if defined CONFIG_RKDDR_PARAM_ADDR
 	u64* buf = (u64*)CONFIG_RKDDR_PARAM_ADDR;
 	u32 count = ((u32*)buf)[0];
@@ -53,9 +56,10 @@ void dram_init_banksize(void)
 	if (count >= CONFIG_RK_MAX_DRAM_BANKS){
 		printf("Wrong bank count: %d(%d)\n",
 				count, CONFIG_RK_MAX_DRAM_BANKS);
-		goto failed;
+		return;
 	}
 	int i;
+	u64 totalsize = 0;
 	for (i = 0; i < count; i++) {
 		gd->bd->rk_dram[i].start = le64_to_cpu(buf[i]);
 		gd->bd->rk_dram[i].size = le64_to_cpu(buf[count + i]);
@@ -63,17 +67,20 @@ void dram_init_banksize(void)
 		/*
 		if (check) {
 			gd->bd->rk_dram[0].start = gd->bd->rk_dram[0].size = 0;
-			goto failed;
+			return;
 		}*/
 		printf("Adding bank:%016llx(%016llx)\n",
 				gd->bd->rk_dram[i].start,
 				gd->bd->rk_dram[i].size);
 		gd->bd->rk_dram[i+1].start = gd->bd->rk_dram[i+1].size = 0;
+		totalsize += gd->bd->rk_dram[i].size;
 	}
-failed:
+#ifdef CONFIG_MAX_MEM_ADDR
+	if (totalsize > CONFIG_MAX_MEM_ADDR)
+		totalsize = CONFIG_MAX_MEM_ADDR;
 #endif
-
-	gd->bd->bi_dram[0].start = PHYS_SDRAM;
-	gd->bd->bi_dram[0].size = PHYS_SDRAM_SIZE;
+	gd->bd->bi_dram[0].start = gd->bd->rk_dram[0].start;
+	gd->bd->bi_dram[0].size = totalsize;
+#endif
 }
 
